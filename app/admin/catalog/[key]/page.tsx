@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  ChevronLeftIcon,
+  EyeIcon,
+  FileIcon,
+  SendIcon,
+  SignalIcon,
+} from "../../../_components/icons";
+import {
   BTN_PRIMARY_CLASS,
   BTN_SECONDARY_CLASS,
 } from "../../../_components/styles";
@@ -34,6 +41,7 @@ const CATEGORY_META: Record<string, { label: string; bg: string }> = {
   business: { label: "БІЗНЕС", bg: "#10B981" },
 };
 
+const FEATURE_ICON_CLASS = "h-4 w-4 shrink-0 text-gray-500";
 const numberFormat = new Intl.NumberFormat("uk-UA");
 
 async function fetchTemplate(key: string): Promise<TemplateDetails | null> {
@@ -66,7 +74,8 @@ export default async function TemplatePreviewPage({
     <div className="mx-auto max-w-7xl px-6 py-6">
       {/* Breadcrumb */}
       <nav className="mb-5 text-sm text-gray-500">
-        <Link href="/admin/catalog" className="hover:text-gray-900">
+        <Link href="/admin/catalog" className="inline-flex items-center gap-1 hover:text-gray-900">
+          <ChevronLeftIcon className="h-4 w-4" />
           Каталог
         </Link>
         <span className="mx-2">/</span>
@@ -150,7 +159,11 @@ export default async function TemplatePreviewPage({
                   key={`${f.label}-${idx}`}
                   className="flex items-center gap-2 text-sm text-gray-700"
                 >
-                  <FeatureIcon type={f.icon} />
+                  {f.icon === "file" ? (
+                    <FileIcon className={FEATURE_ICON_CLASS} />
+                  ) : (
+                    <SignalIcon className={FEATURE_ICON_CLASS} />
+                  )}
                   {f.label}
                 </li>
               ))}
@@ -163,7 +176,7 @@ export default async function TemplatePreviewPage({
               href={`/admin/sites/new?template=${encodeURIComponent(template.key)}`}
               className={`${BTN_PRIMARY_CLASS} gap-2`}
             >
-              <SendIcon />
+              <SendIcon className="h-4 w-4" />
               Персоналізувати шаблон
             </Link>
             <button
@@ -172,88 +185,12 @@ export default async function TemplatePreviewPage({
               title="Скоро — повний рендер шаблону у новій вкладці"
               className={`${BTN_SECONDARY_CLASS} gap-2`}
             >
-              <EyeIcon />
+              <EyeIcon className="h-4 w-4" />
               Повне прев&apos;ю
             </button>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function FeatureIcon({ type }: { type?: string }) {
-  const className = "h-4 w-4 shrink-0 text-gray-500";
-  if (type === "file") {
-    return (
-      <svg
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.75}
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-        />
-      </svg>
-    );
-  }
-  // Default: signal / wifi icon
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z"
-      />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-    </svg>
   );
 }

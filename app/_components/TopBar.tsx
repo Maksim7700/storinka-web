@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MenuIcon } from "./icons";
 
 type Props = {
   onMenuClick?: () => void;
@@ -15,7 +16,7 @@ export default function TopBar({ onMenuClick }: Props) {
         className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
         aria-label="Toggle navigation"
       >
-        <MenuIcon />
+        <MenuIcon className="h-5 w-5" />
       </button>
       <Link
         href="/admin"
@@ -24,24 +25,5 @@ export default function TopBar({ onMenuClick }: Props) {
         Logo
       </Link>
     </header>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-      />
-    </svg>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SendIcon } from "../../../_components/icons";
 import type { TemplateSummary } from "../page";
 
 const numberFormat = new Intl.NumberFormat("uk-UA");
@@ -77,23 +78,10 @@ export default function TemplateCard({
         )}
 
         <div className="mt-auto flex h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-neutral-900 text-sm font-semibold text-white transition group-hover:bg-neutral-800">
-          <SendIcon />
+          <SendIcon className="h-4 w-4" />
           Огляд
         </div>
       </div>
     </Link>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" />
-    </svg>
   );
 }

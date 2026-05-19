@@ -4,6 +4,8 @@ import { useState } from "react";
 import { EyeIcon, EyeOffIcon } from "./icons";
 import { INPUT_CLASS } from "./styles";
 
+const ICON_CLASS = "h-5 w-5";
+
 type Props = {
   id: string;
   value: string;
@@ -41,7 +43,7 @@ export default function PasswordInput({
         aria-label={visible ? "Сховати пароль" : "Показати пароль"}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
       >
-        {visible ? <EyeOffIcon /> : <EyeIcon />}
+        {visible ? <EyeOffIcon className={ICON_CLASS} /> : <EyeIcon className={ICON_CLASS} />}
       </button>
     </div>
   );

@@ -15,7 +15,7 @@ export default function GoogleButton({ label = "Продовжити з Google" 
       title="Тимчасово недоступно — backend ендпоінт ще не реалізований"
       className={BTN_SECONDARY_CLASS}
     >
-      <GoogleIcon />
+      <GoogleIcon className="h-5 w-5" />
       {label}
     </button>
   );
