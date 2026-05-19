@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import GoogleButton from "../_components/GoogleButton";
 import PasswordInput from "../_components/PasswordInput";
+import {
+  BTN_PRIMARY_CLASS,
+  CARD_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+} from "../_components/styles";
 
 export default function LoginPage() {
   return (
@@ -54,8 +60,8 @@ function LoginForm() {
 
   return (
     <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">
+      <div className={CARD_CLASS}>
+        <h1 className="mb-8 text-center text-[28px] font-bold text-gray-900">
           Log In
         </h1>
 
@@ -70,12 +76,9 @@ function LoginForm() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm text-gray-700"
-            >
+            <label htmlFor="email" className={LABEL_CLASS}>
               Email
             </label>
             <input
@@ -86,15 +89,12 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Введіть текст"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+              className={INPUT_CLASS}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm text-gray-700"
-            >
+            <label htmlFor="password" className={LABEL_CLASS}>
               Пароль
             </label>
             <PasswordInput
@@ -105,7 +105,7 @@ function LoginForm() {
             />
             <Link
               href="/forgot-password"
-              className="mt-1 inline-block text-xs text-gray-500 hover:text-gray-700"
+              className="mt-2 inline-block text-xs text-gray-500 hover:text-gray-700"
             >
               Forgot password?
             </Link>
@@ -123,7 +123,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+            className={BTN_PRIMARY_CLASS}
           >
             {loading ? "Зачекайте..." : "Вхід"}
           </button>
@@ -131,7 +131,7 @@ function LoginForm() {
           <GoogleButton />
         </form>
 
-        <p className="mt-6 text-center text-xs text-gray-500">
+        <p className="mt-8 text-center text-sm text-gray-500">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"

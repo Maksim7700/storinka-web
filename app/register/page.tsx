@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import GoogleButton from "../_components/GoogleButton";
 import PasswordInput from "../_components/PasswordInput";
+import {
+  BTN_PRIMARY_CLASS,
+  CARD_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+} from "../_components/styles";
 
 type FieldError = { field: string; defaultMessage: string };
 
@@ -57,17 +63,14 @@ export default function RegisterPage() {
 
   return (
     <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">
+      <div className={CARD_CLASS}>
+        <h1 className="mb-8 text-center text-[28px] font-bold text-gray-900">
           Sign Up
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label
-              htmlFor="fullName"
-              className="mb-1 block text-sm text-gray-700"
-            >
+            <label htmlFor="fullName" className={LABEL_CLASS}>
               Повне ім&apos;я
             </label>
             <input
@@ -78,15 +81,12 @@ export default function RegisterPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Введіть текст"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+              className={INPUT_CLASS}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm text-gray-700"
-            >
+            <label htmlFor="email" className={LABEL_CLASS}>
               Email
             </label>
             <input
@@ -97,15 +97,12 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Введіть текст"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+              className={INPUT_CLASS}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="phone"
-              className="mb-1 block text-sm text-gray-700"
-            >
+            <label htmlFor="phone" className={LABEL_CLASS}>
               Телефон{" "}
               <span className="text-gray-400">(необов&apos;язково)</span>
             </label>
@@ -116,15 +113,12 @@ export default function RegisterPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+380XXXXXXXXX"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+              className={INPUT_CLASS}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm text-gray-700"
-            >
+            <label htmlFor="password" className={LABEL_CLASS}>
               Пароль
             </label>
             <PasswordInput
@@ -133,7 +127,7 @@ export default function RegisterPage() {
               onChange={setPassword}
               autoComplete="new-password"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-500">
               Мінімум 8 символів, 1 велика літера, 1 цифра.
             </p>
           </div>
@@ -150,7 +144,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+            className={BTN_PRIMARY_CLASS}
           >
             {loading ? "Зачекайте..." : "Реєстрація"}
           </button>
@@ -158,7 +152,7 @@ export default function RegisterPage() {
           <GoogleButton />
         </form>
 
-        <p className="mt-6 text-center text-xs text-gray-500">
+        <p className="mt-8 text-center text-sm text-gray-500">
           Already have an account?{" "}
           <Link
             href="/login"

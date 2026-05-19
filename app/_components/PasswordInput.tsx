@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EyeIcon, EyeOffIcon } from "./icons";
+import { INPUT_CLASS } from "./styles";
 
 type Props = {
   id: string;
@@ -32,7 +33,7 @@ export default function PasswordInput({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+        className={`${INPUT_CLASS} pr-12`}
       />
       <button
         type="button"
