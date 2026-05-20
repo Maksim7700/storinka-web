@@ -12,6 +12,8 @@ export { SupportIcon } from "./SupportIcon";
 export { TemplatesIcon } from "./TemplatesIcon";
 export { UsersIcon } from "./UsersIcon";
 export { LogoutIcon } from "./LogoutIcon";
+export { MonitorIcon } from "./MonitorIcon";
+export { PhoneIcon } from "./PhoneIcon";
 export { SphereIcon } from "./SphereIcon";
 export { SiteTypeIcon } from "./SiteTypeIcon";
 export { FeaturesIcon } from "./FeaturesIcon";

@@ -179,15 +179,13 @@ export default async function TemplatePreviewPage({
               <SendIcon className="h-4 w-4" />
               Персоналізувати шаблон
             </Link>
-            <button
-              type="button"
-              disabled
-              title="Скоро — повний рендер шаблону у новій вкладці"
+            <Link
+              href={`/preview/${encodeURIComponent(template.key)}`}
               className={`${BTN_SECONDARY_CLASS} gap-2`}
             >
               <EyeIcon className="h-4 w-4" />
               Повне прев&apos;ю
-            </button>
+            </Link>
           </div>
         </div>
       </div>
