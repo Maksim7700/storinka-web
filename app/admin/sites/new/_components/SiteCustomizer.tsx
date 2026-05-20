@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ChevronLeftIcon, SendIcon } from "../../../../_components/icons";
 import { getTemplateComponent } from "../../../../_components/templates/registry";
-import type { TemplateField, TemplateForWizard } from "../page";
-import ContentForm from "./ContentForm";
+import ContentForm, {
+  type TemplateField,
+} from "../../_components/ContentForm";
+import type { TemplateForWizard } from "../page";
 import DomainModal from "./DomainModal";
 
 function initialContentFromSchema(

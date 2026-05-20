@@ -1,14 +1,6 @@
 import { notFound, redirect } from "next/navigation";
+import type { TemplateField } from "../_components/ContentForm";
 import SiteCustomizer from "./_components/SiteCustomizer";
-
-export type TemplateField = {
-  key: string;
-  label: string;
-  type: string;
-  required?: boolean;
-  placeholder?: string;
-  default?: string | number;
-};
 
 export type TemplateForWizard = {
   id: number;

@@ -1,7 +1,15 @@
 "use client";
 
-import { INPUT_CLASS, LABEL_CLASS } from "../../../../_components/styles";
-import type { TemplateField } from "../page";
+import { INPUT_CLASS, LABEL_CLASS } from "../../../_components/styles";
+
+export type TemplateField = {
+  key: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  placeholder?: string;
+  default?: string | number;
+};
 
 type Props = {
   fields: TemplateField[];
@@ -64,7 +72,13 @@ function renderControl(
 ) {
   switch (field.type) {
     case "color":
-      return <ColorControl id={field.key} value={String(value || "#000000")} onChange={onChange} />;
+      return (
+        <ColorControl
+          id={field.key}
+          value={String(value || "#000000")}
+          onChange={onChange}
+        />
+      );
     case "number":
       return (
         <input
