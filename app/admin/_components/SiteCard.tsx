@@ -12,13 +12,13 @@ import {
 import { ROOT_DOMAIN } from "../../_lib/constants";
 import DeleteSiteModal from "./DeleteSiteModal";
 
-type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "EXPIRED";
+type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
 
 const STATUS_META: Record<SiteStatus, { label: string; className: string }> = {
   DRAFT: { label: "ЧЕРНЕТКА", className: "bg-gray-200 text-gray-700" },
   ACTIVE: { label: "АКТИВНО", className: "bg-green-500 text-white" },
-  SUSPENDED: { label: "ЗАБЛОКОВАНО", className: "bg-red-500 text-white" },
-  EXPIRED: { label: "ПРОСТРОЧЕНО", className: "bg-gray-300 text-gray-700" },
+  SUSPENDED: { label: "ПРИЗУПИНЕНО", className: "bg-amber-500 text-white" },
+  INACTIVE: { label: "НЕАКТИВНО", className: "bg-gray-300 text-gray-700" },
 };
 
 const numberFormat = new Intl.NumberFormat("uk-UA");
@@ -61,8 +61,10 @@ export default function SiteCard({
   const status = STATUS_META[site.status] ?? STATUS_META.DRAFT;
   const isActive = site.status === "ACTIVE";
   const liveUrl = `https://${site.subdomain}.${ROOT_DOMAIN}`;
-  const ogliadHref = isActive ? liveUrl : `/admin/sites/${site.id}`;
-  const ogliadTarget = isActive ? "_blank" : undefined;
+  // Огляд is always the same destination — a single "site overview" page.
+  // That page adapts its primary action to the current status (pay, resume,
+  // open live, etc.), so the card-level UX stays predictable.
+  const ogliadHref = `/admin/sites/${site.id}/preview`;
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -126,13 +128,15 @@ export default function SiteCard({
         <div className="mt-auto flex items-center gap-3">
           <CardMenu
             liveUrl={liveUrl}
-            settingsHref={`/admin/sites/${site.id}`}
+            settingsHref={
+              site.status === "DRAFT"
+                ? `/admin/sites/${site.id}/edit`
+                : `/admin/sites/${site.id}`
+            }
             onDelete={() => setDeleteOpen(true)}
           />
           <Link
             href={ogliadHref}
-            target={ogliadTarget}
-            rel={ogliadTarget === "_blank" ? "noopener noreferrer" : undefined}
             className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[10px] bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
           >
             <SendIcon className="h-4 w-4" />
