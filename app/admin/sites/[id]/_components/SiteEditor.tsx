@@ -10,13 +10,13 @@ import ContentForm, {
   type TemplateField,
 } from "../../_components/ContentForm";
 
-type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "EXPIRED";
+type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
 
 const STATUS_META: Record<SiteStatus, { label: string; className: string }> = {
   DRAFT: { label: "ЧЕРНЕТКА", className: "bg-gray-100 text-gray-700" },
   ACTIVE: { label: "АКТИВНО", className: "bg-green-100 text-green-700" },
-  SUSPENDED: { label: "ЗАБЛОКОВАНО", className: "bg-red-100 text-red-700" },
-  EXPIRED: { label: "ПРОСТРОЧЕНО", className: "bg-gray-200 text-gray-600" },
+  SUSPENDED: { label: "ПРИЗУПИНЕНО", className: "bg-amber-100 text-amber-700" },
+  INACTIVE: { label: "НЕАКТИВНО", className: "bg-gray-200 text-gray-600" },
 };
 
 type Site = {
@@ -87,6 +87,14 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
         const loadedSite: Site = await siteRes.json();
         if (cancelled) return;
 
+        // DRAFT sites belong in the create/edit wizard — this full-page editor
+        // doesn't have a payment path, so a draft owner who lands here would
+        // hit a dead end. Send them to the wizard instead.
+        if (loadedSite.status === "DRAFT") {
+          router.replace(`/admin/sites/${loadedSite.id}/edit`);
+          return;
+        }
+
         const templateRes = await fetch(
           `/api/templates/${encodeURIComponent(loadedSite.templateKey)}`,
         );
@@ -156,11 +164,14 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
     }
   }
 
-  async function handleTogglePublish() {
+  async function handleStatusAction() {
     if (!site) return;
+    // Only ACTIVE → SUSPENDED and SUSPENDED → ACTIVE use the publish/unpublish
+    // endpoints here. DRAFT and INACTIVE need payment, so the editor renders
+    // a link to /preview for those (not this button).
+    const action = site.status === "ACTIVE" ? "unpublish" : "publish";
     setPublishing(true);
     setPublishError(null);
-    const action = site.status === "ACTIVE" ? "unpublish" : "publish";
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/sites/${site.id}/${action}`, {
@@ -244,20 +255,12 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
             <p className="text-xs text-red-600">{saveError}</p>
           )}
 
-          {(site.status === "DRAFT" || site.status === "ACTIVE") && (
-            <button
-              type="button"
-              onClick={handleTogglePublish}
-              disabled={publishing}
-              className="flex h-10 items-center gap-2 rounded-[10px] border border-[#C8C8C8] bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 disabled:opacity-60"
-            >
-              {publishing
-                ? "..."
-                : site.status === "ACTIVE"
-                  ? "Зняти з публікації"
-                  : "Опублікувати"}
-            </button>
-          )}
+          <StatusAction
+            status={site.status}
+            siteId={site.id}
+            publishing={publishing}
+            onClick={handleStatusAction}
+          />
 
           <button
             type="button"
@@ -298,5 +301,66 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
       </div>
 
     </div>
+  );
+}
+
+function StatusAction({
+  status,
+  siteId,
+  publishing,
+  onClick,
+}: {
+  status: SiteStatus;
+  siteId: number;
+  publishing: boolean;
+  onClick: () => void;
+}) {
+  // DRAFT/INACTIVE need a payment, so we link to the preview/payment page
+  // rather than calling an API. ACTIVE/SUSPENDED toggle via PATCH.
+  const baseClass =
+    "flex h-10 items-center gap-2 rounded-[10px] px-4 text-sm font-semibold transition disabled:opacity-60 cursor-pointer";
+
+  if (status === "DRAFT") {
+    return (
+      <Link
+        href={`/admin/sites/${siteId}/edit`}
+        className={`${baseClass} bg-neutral-900 text-white hover:bg-neutral-800`}
+      >
+        Перейти до оплати
+      </Link>
+    );
+  }
+  if (status === "INACTIVE") {
+    return (
+      <Link
+        href={`/admin/sites/${siteId}/preview`}
+        className={`${baseClass} bg-neutral-900 text-white hover:bg-neutral-800`}
+      >
+        Поновити підписку
+      </Link>
+    );
+  }
+  if (status === "ACTIVE") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={publishing}
+        className={`${baseClass} border border-[#C8C8C8] bg-white text-gray-900 hover:bg-gray-50`}
+      >
+        {publishing ? "..." : "Призупинити"}
+      </button>
+    );
+  }
+  // SUSPENDED
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={publishing}
+      className={`${baseClass} bg-green-600 text-white hover:bg-green-700`}
+    >
+      {publishing ? "..." : "Відновити"}
+    </button>
   );
 }

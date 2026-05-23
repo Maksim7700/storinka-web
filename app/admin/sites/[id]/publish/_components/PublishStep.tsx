@@ -9,7 +9,7 @@ import { ROOT_DOMAIN } from "../../../../../_lib/constants";
 type Site = {
   id: number;
   subdomain: string;
-  status: "DRAFT" | "ACTIVE" | "SUSPENDED" | "EXPIRED";
+  status: "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
   templateId: number;
   templateKey: string;
   templateName: string;
