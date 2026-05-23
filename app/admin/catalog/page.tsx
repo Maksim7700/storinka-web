@@ -1,5 +1,7 @@
 import CatalogContent from "./_components/CatalogContent";
 
+export const dynamic = "force-dynamic";
+
 export type TemplateSummary = {
   id: number;
   key: string;
