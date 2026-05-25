@@ -41,7 +41,13 @@ export default function RegisterPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         if (res.status === 409) {
-          setError("Користувач з таким email вже існує");
+          // Backend uses a distinct message when the email already belongs
+          // to a Google account — show it as-is so the user knows to click
+          // the Google button. Otherwise fall back to the generic conflict.
+          const msg = typeof body?.message === "string" ? body.message : "";
+          setError(
+            msg.includes("Google") ? msg : "Користувач з таким email вже існує",
+          );
         } else if (res.status === 400 && body?.errors?.length) {
           const first = (body.errors as FieldError[])[0];
           setError(first.defaultMessage ?? "Невірно заповнені поля");
@@ -149,7 +155,7 @@ export default function RegisterPage() {
             {loading ? "Зачекайте..." : "Реєстрація"}
           </button>
 
-          <GoogleButton />
+          <GoogleButton intent="register" onError={setError} />
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
