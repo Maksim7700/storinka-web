@@ -42,8 +42,17 @@ function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
+        const body = await res.json().catch(() => null);
         if (res.status === 401) setError("Невірний email або пароль");
         else if (res.status === 403) setError("Акаунт заблоковано");
+        else if (res.status === 409)
+          // Backend signals "this email is registered via Google" with 409 +
+          // a Ukrainian message — surface it as-is so the user knows to use
+          // the Google button below.
+          setError(
+            body?.message ??
+              "Цей email зареєстровано через Google. Увійдіть через Google.",
+          );
         else setError("Не вдалось увійти. Спробуйте пізніше");
         return;
       }
@@ -128,7 +137,7 @@ function LoginForm() {
             {loading ? "Зачекайте..." : "Вхід"}
           </button>
 
-          <GoogleButton />
+          <GoogleButton intent="login" onError={setError} />
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
