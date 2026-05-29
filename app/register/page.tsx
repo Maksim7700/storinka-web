@@ -71,7 +71,7 @@ export default function RegisterPage() {
     <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
       <div className={CARD_CLASS}>
         <h1 className="mb-8 text-center text-[28px] font-bold text-gray-900">
-          Sign Up
+          Реєстрація
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -147,24 +147,26 @@ export default function RegisterPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={BTN_PRIMARY_CLASS}
-          >
-            {loading ? "Зачекайте..." : "Реєстрація"}
-          </button>
+          <div className="space-y-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className={BTN_PRIMARY_CLASS}
+            >
+              {loading ? "Зачекайте..." : "Реєстрація"}
+            </button>
 
-          <GoogleButton intent="register" onError={setError} />
+            <GoogleButton intent="register" onError={setError} />
+          </div>
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
-          Already have an account?{" "}
+          Вже маєте акаунт?{" "}
           <Link
             href="/login"
             className="font-semibold text-gray-900 hover:underline"
           >
-            Log In
+            Увійти
           </Link>
         </p>
       </div>

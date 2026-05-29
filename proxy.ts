@@ -43,7 +43,11 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Skip Next internals, static assets, our /api proxy target, and
-  // .well-known/ probes (Chrome DevTools, ACME challenges, etc.).
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|\\.well-known).*)"],
+  // Skip Next internals, static assets, our /api proxy target,
+  // SEO discovery files (must be served at the root of every host so
+  // crawlers can find them — including subdomain hosts), and .well-known/
+  // probes (Chrome DevTools, ACME challenges, etc.).
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|\\.well-known).*)",
+  ],
 };

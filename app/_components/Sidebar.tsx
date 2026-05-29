@@ -102,7 +102,16 @@ export default function Sidebar({ user }: { user: CurrentUser }) {
                       className="my-2 border-t border-[#E6E6E6]"
                     />
                   )}
-                  <li>
+                  <li className="relative">
+                    {/* Active marker: small black tab flush with the sidebar's
+                        left edge. `-left-3` cancels the nav's px-3 padding so
+                        the tab sits exactly at the aside's left border. */}
+                    {active && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-0 -left-3 w-1 rounded-r-md bg-neutral-900"
+                      />
+                    )}
                     <Link
                       href={item.href}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
@@ -128,7 +137,7 @@ export default function Sidebar({ user }: { user: CurrentUser }) {
           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
         >
           <LogoutIcon className={ICON_CLASS} />
-          Log Out
+          Вийти
         </button>
       </div>
     </aside>

@@ -14,7 +14,7 @@ export default function TopBar({ onMenuClick }: Props) {
         type="button"
         onClick={onMenuClick}
         className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
-        aria-label="Toggle navigation"
+        aria-label="Меню навігації"
       >
         <MenuIcon className="h-5 w-5" />
       </button>
@@ -22,7 +22,7 @@ export default function TopBar({ onMenuClick }: Props) {
         href="/admin"
         className="text-lg font-bold tracking-tight text-gray-900"
       >
-        Logo
+        Storinka
       </Link>
     </header>
   );

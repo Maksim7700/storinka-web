@@ -10,7 +10,15 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Storinka",
+  // `default` — what every child page gets unless it overrides.
+  // `template` — internal Storinka pages (/login, /admin/*) can set just
+  // their own short title (e.g. "Вхід") and Next appends "| Storinka".
+  // Per-subdomain client sites bypass this template via `title.absolute`
+  // in their own generateMetadata — their brand stands alone.
+  title: {
+    default: "Storinka",
+    template: "%s | Storinka",
+  },
   description: "Платформа для створення сайтів на піддоменах",
 };
 

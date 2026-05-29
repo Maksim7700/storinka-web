@@ -41,7 +41,7 @@ export default function PasswordInput({
         type="button"
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? "Сховати пароль" : "Показати пароль"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
       >
         {visible ? <EyeOffIcon className={ICON_CLASS} /> : <EyeIcon className={ICON_CLASS} />}
       </button>
