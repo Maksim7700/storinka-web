@@ -186,7 +186,7 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
       <div className="flex flex-1 overflow-hidden">
         <section
           className="flex-[2] overflow-y-auto bg-white"
-          aria-label="Live preview"
+          aria-label="Живе прев'ю"
         >
           {Component ? (
             <Component content={content} />
@@ -199,7 +199,7 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
 
         <aside
           className="flex w-[380px] shrink-0 flex-col overflow-y-auto border-l border-[#E6E6E6] bg-white p-6"
-          aria-label="Edit form"
+          aria-label="Форма редагування"
         >
           <ContentForm fields={fields} values={content} onChange={updateField} />
         </aside>

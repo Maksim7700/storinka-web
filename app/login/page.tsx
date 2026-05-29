@@ -71,7 +71,7 @@ function LoginForm() {
     <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
       <div className={CARD_CLASS}>
         <h1 className="mb-8 text-center text-[28px] font-bold text-gray-900">
-          Log In
+          Вхід
         </h1>
 
         {verified && (
@@ -114,9 +114,9 @@ function LoginForm() {
             />
             <Link
               href="/forgot-password"
-              className="mt-2 inline-block text-xs text-gray-500 hover:text-gray-700"
+              className="mt-2 inline-block text-sm text-gray-500 hover:text-gray-700"
             >
-              Forgot password?
+              Забули пароль?
             </Link>
           </div>
 
@@ -129,24 +129,26 @@ function LoginForm() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={BTN_PRIMARY_CLASS}
-          >
-            {loading ? "Зачекайте..." : "Вхід"}
-          </button>
+          <div className="space-y-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className={BTN_PRIMARY_CLASS}
+            >
+              {loading ? "Зачекайте..." : "Вхід"}
+            </button>
 
-          <GoogleButton intent="login" onError={setError} />
+            <GoogleButton intent="login" onError={setError} />
+          </div>
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
+          Немає акаунту?{" "}
           <Link
             href="/register"
             className="font-semibold text-gray-900 hover:underline"
           >
-            Sign Up
+            Зареєструватись
           </Link>
         </p>
       </div>

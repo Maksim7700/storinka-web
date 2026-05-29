@@ -6,6 +6,7 @@ import type { TemplateComponentProps } from "./types";
 type SalonContent = {
   businessName?: string;
   tagline?: string;
+  description?: string;
   phone?: string;
   address?: string;
   primaryColor?: string;
@@ -14,6 +15,7 @@ type SalonContent = {
 type ResolvedContent = {
   businessName: string;
   tagline: string;
+  description: string;
   phone: string;
   address: string;
   primary: string;
@@ -22,6 +24,8 @@ type ResolvedContent = {
 const DEFAULTS: ResolvedContent = {
   businessName: "Lumina Salon",
   tagline: "Краса в кожній деталі",
+  description:
+    "Сучасний салон з повним спектром послуг. Стрижки, фарбування, манікюр, догляд за обличчям. Команда майстрів з понад 10-річним досвідом подбає про ваш образ від голови до кінчиків пальців.",
   phone: "+380 50 123 45 67",
   address: "Київ, Хрещатик 1",
   primary: "#C9A86C",
@@ -57,6 +61,7 @@ function resolve(content: SalonContent | undefined): ResolvedContent {
   return {
     businessName: content?.businessName || DEFAULTS.businessName,
     tagline: content?.tagline || DEFAULTS.tagline,
+    description: content?.description || DEFAULTS.description,
     phone: content?.phone || DEFAULTS.phone,
     address: content?.address || DEFAULTS.address,
     primary: content?.primaryColor || DEFAULTS.primary,
@@ -217,9 +222,7 @@ function Hero({ c }: { c: ResolvedContent }) {
           {c.businessName}
         </h1>
         <p className="mt-4 max-w-md text-sm text-gray-600 @3xl:mt-5 @3xl:text-base">
-          Сучасний салон з повним спектром послуг. Стрижки, фарбування, манікюр,
-          догляд за обличчям. Команда майстрів з понад 10-річним досвідом
-          подбає про ваш образ від голови до кінчиків пальців.
+          {c.description}
         </p>
         <div className="mt-6 flex flex-wrap gap-3 @3xl:mt-8">
           <a
