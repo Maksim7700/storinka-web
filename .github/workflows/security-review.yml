@@ -1,7 +1,7 @@
 name: Security Review
 
 permissions:
-  pull-requests: write  # Needed for leaving PR comments
+  pull-requests: write
   contents: read
 
 on:
@@ -10,12 +10,12 @@ on:
 jobs:
   security:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 2
-      
+          fetch-depth: 0
+
       - uses: anthropics/claude-code-security-review@main
         with:
           comment-pr: true
