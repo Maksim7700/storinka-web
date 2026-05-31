@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { cache } from "react";
 import { buildJsonLd, serialiseJsonLd } from "../../_lib/jsonLd";
 import { getTemplateComponent } from "../../_components/templates/registry";
@@ -8,6 +9,10 @@ type PublicSite = {
   subdomain: string;
   templateKey: string;
   contentJson: Record<string, unknown>;
+  /** Optional GSC HTML-tag verification code. Becomes a meta tag in <head>. */
+  gscVerification: string | null;
+  /** Optional GA4 measurement ID, e.g. "G-XXXXXXXXXX". Becomes a gtag script. */
+  gaMeasurementId: string | null;
 };
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
@@ -107,6 +112,11 @@ export async function generateMetadata({
       description,
     },
     robots: { index: true, follow: true },
+    // Renders <meta name="google-site-verification" content="..."> so the
+    // owner can claim the property in Google Search Console.
+    ...(site.gscVerification
+      ? { verification: { google: site.gscVerification } }
+      : {}),
   };
 }
 
@@ -128,6 +138,10 @@ export default async function PublicSitePage({
 
   const jsonLd = buildJsonLd(site, SITES_ROOT);
 
+  // GA4 measurement IDs start with "G-". We sanity-check the format here so
+  // a typo in the admin can't inject arbitrary script content via gtag URL.
+  const gaId = isValidGaId(site.gaMeasurementId) ? site.gaMeasurementId : null;
+
   return (
     <>
       {jsonLd && (
@@ -140,7 +154,34 @@ export default async function PublicSitePage({
           dangerouslySetInnerHTML={{ __html: serialiseJsonLd(jsonLd) }}
         />
       )}
+
+      {gaId && (
+        // Google Analytics 4 via gtag. `afterInteractive` so it loads after
+        // the page is interactive — analytics never block the user.
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga-init" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${gaId}');
+            `}
+          </Script>
+        </>
+      )}
+
       <Component content={site.contentJson as Record<string, unknown>} />
     </>
   );
+}
+
+// Accept G-, UA-, AW- and DC- prefixes (all valid Google tag IDs), with
+// only safe characters in the suffix. Anything else is silently dropped.
+function isValidGaId(id: string | null | undefined): id is string {
+  if (!id) return false;
+  return /^(G|UA|AW|DC)-[A-Z0-9-]{3,30}$/i.test(id);
 }
