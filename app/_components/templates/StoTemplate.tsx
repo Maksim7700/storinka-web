@@ -136,10 +136,19 @@ function Hero({ c }: { c: ResolvedContent }) {
       <div className="relative">
         <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/30 to-slate-800 @3xl:aspect-[5/4]">
           {c.photo ? (
+            // LCP element — explicit width/height prevents CLS, eager +
+            // fetchpriority="high" tell the browser this is the biggest
+            // above-the-fold image and to start the request immediately.
+            // Aspect ratio kept consistent with the container (4/3).
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={c.photo}
               alt={c.businessName}
+              width={1200}
+              height={900}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="h-full w-full object-cover"
             />
           ) : (

@@ -9,6 +9,7 @@ import { ROOT_DOMAIN } from "../../../../_lib/constants";
 import ContentForm, {
   type TemplateField,
 } from "../../_components/ContentForm";
+import SeoSettings from "./SeoSettings";
 
 type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
 
@@ -29,6 +30,8 @@ type Site = {
   templateName: string;
   templateThumbnailUrl: string | null;
   contentJson: Record<string, string | number>;
+  gscVerification: string | null;
+  gaMeasurementId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -41,6 +44,7 @@ type Template = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type EditorTab = "content" | "seo";
 
 export default function SiteEditor({ siteId }: { siteId: number }) {
   const router = useRouter();
@@ -55,6 +59,11 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
 
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+
+  // Right panel is now tabbed: content fields vs SEO/analytics integrations.
+  // SEO has its own save flow (different endpoint) so the top-toolbar save
+  // is hidden when the SEO tab is active.
+  const [tab, setTab] = useState<EditorTab>("content");
 
   // Load site → then load its template (need schema_json for the form).
   useEffect(() => {
@@ -251,7 +260,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
           {publishError && (
             <p className="text-xs text-red-600">{publishError}</p>
           )}
-          {saveState === "error" && saveError && (
+          {tab === "content" && saveState === "error" && saveError && (
             <p className="text-xs text-red-600">{saveError}</p>
           )}
 
@@ -262,18 +271,23 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
             onClick={handleStatusAction}
           />
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saveState === "saving"}
-            className="flex h-10 items-center gap-2 rounded-[10px] bg-neutral-900 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60"
-          >
-            {saveState === "saving"
-              ? "Зберігаємо..."
-              : saveState === "saved"
-                ? "Збережено ✓"
-                : "Зберегти"}
-          </button>
+          {/* Top-toolbar save targets the active tab's primary action — for now
+              just the Content tab. SEO has its own save inside the SeoSettings
+              card because it hits a different endpoint with different state. */}
+          {tab === "content" && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saveState === "saving"}
+              className="flex h-10 items-center gap-2 rounded-[10px] bg-neutral-900 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60"
+            >
+              {saveState === "saving"
+                ? "Зберігаємо..."
+                : saveState === "saved"
+                  ? "Збережено ✓"
+                  : "Зберегти контент"}
+            </button>
+          )}
         </div>
       </header>
 
@@ -293,14 +307,91 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
         </section>
 
         <aside
-          className="flex w-[380px] shrink-0 flex-col overflow-y-auto border-l border-[#E6E6E6] bg-white p-6"
+          className="flex w-[380px] shrink-0 flex-col overflow-hidden border-l border-[#E6E6E6] bg-white"
           aria-label="Форма редагування"
         >
-          <ContentForm fields={fields} values={content} onChange={updateField} />
+          {/* Tab strip — sticks to top of the panel, content below scrolls. */}
+          <div
+            role="tablist"
+            aria-label="Розділи редагування сайту"
+            className="flex shrink-0 border-b border-[#E6E6E6] px-3"
+          >
+            <TabButton
+              active={tab === "content"}
+              onClick={() => setTab("content")}
+            >
+              Контент
+            </TabButton>
+            <TabButton active={tab === "seo"} onClick={() => setTab("seo")}>
+              SEO
+            </TabButton>
+          </div>
+
+          <div
+            role="tabpanel"
+            className="flex-1 overflow-y-auto p-6"
+            // The `key` resets internal state (scroll position, etc.) when
+            // switching tabs — feels more like distinct screens.
+            key={tab}
+          >
+            {tab === "content" ? (
+              <ContentForm
+                fields={fields}
+                values={content}
+                onChange={updateField}
+              />
+            ) : (
+              <SeoSettings
+                siteId={site.id}
+                subdomain={site.subdomain}
+                initial={{
+                  gscVerification: site.gscVerification,
+                  gaMeasurementId: site.gaMeasurementId,
+                }}
+                onSaved={(values) =>
+                  setSite((prev) => (prev ? { ...prev, ...values } : prev))
+                }
+              />
+            )}
+          </div>
         </aside>
       </div>
 
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`relative cursor-pointer px-3 py-3 text-sm transition ${
+        active
+          ? "font-semibold text-neutral-900"
+          : "font-medium text-gray-500 hover:text-gray-900"
+      }`}
+    >
+      {children}
+      {/* Underline indicator — sits on the parent's bottom border for a
+          flush "selected tab" look without shifting layout. */}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 -bottom-px h-[2px] bg-neutral-900"
+        />
+      )}
+    </button>
   );
 }
 
