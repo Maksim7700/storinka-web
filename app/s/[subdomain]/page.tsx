@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import { cache } from "react";
+import { siteTag } from "../../_lib/cacheTags";
 import { buildJsonLd, serialiseJsonLd } from "../../_lib/jsonLd";
 import { getTemplateComponent } from "../../_components/templates/registry";
 
@@ -22,10 +23,21 @@ const SITES_ROOT = process.env.NEXT_PUBLIC_SITES_ROOT ?? "storinka.ua";
 
 // React `cache()` dedupes the call within a single request, so both
 // generateMetadata and the page component reuse one HTTP fetch.
+//
+// Caching strategy (was: cache: "no-store" — every visit hit Spring):
+//   - `revalidate: 300` — auto-refresh at most every 5min. Picks up
+//     content edits that bypassed the explicit invalidation (e.g. a
+//     write made directly against the backend outside the admin UI).
+//   - `tags: [siteTag(subdomain)]` — paired with `updateTag(...)` in
+//     the revalidateSite Server Action so admin saves invalidate the
+//     cache *immediately* on publish / content change / SEO change.
+// Net effect: cold visits read from Spring, warm visits read from the
+// Next data cache, and the owner's own saves are reflected on the next
+// request without waiting for the 5min window.
 const loadSite = cache(async (subdomain: string): Promise<PublicSite | null> => {
   const res = await fetch(
     `${BACKEND_URL}/api/vendors/${encodeURIComponent(subdomain)}/site`,
-    { cache: "no-store" },
+    { next: { revalidate: 300, tags: [siteTag(subdomain)] } },
   );
   if (res.status === 404) return null;
   if (!res.ok) {

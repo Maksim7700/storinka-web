@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
+import { SITEMAP_TAG } from "./_lib/cacheTags";
 
 // SEO: generated sitemap for whichever host the request lands on.
 //
@@ -33,8 +34,10 @@ async function fetchAllSites(): Promise<SitemapEntry[]> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/vendors/sitemap`, {
       // Sitemap shouldn't be stale by more than an hour; Google re-fetches
-      // periodically anyway. Tagged so we can revalidate on publish later.
-      next: { revalidate: 3600, tags: ["sitemap"] },
+      // periodically anyway. The tag is invalidated by revalidateSite()
+      // on publish/unpublish so newly active sites are listed without
+      // waiting for the hourly window.
+      next: { revalidate: 3600, tags: [SITEMAP_TAG] },
     });
     if (!res.ok) return [];
     return (await res.json()) as SitemapEntry[];
