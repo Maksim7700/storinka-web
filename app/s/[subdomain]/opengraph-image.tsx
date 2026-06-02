@@ -1,19 +1,4 @@
-// Dynamic Open Graph image for each client subdomain — rendered server-side
-// at request time by Satori (via next/og's ImageResponse).
-//
-// What it does: when a link to <subdomain>.storinka.ua is shared on
-// Telegram / Facebook / Twitter / WhatsApp etc., the scraper hits this
-// route, gets a 1200x630 PNG with the business name + type + tagline,
-// and renders it as the link preview. Without this, the preview falls
-// back to a generic Storinka image (or nothing).
-//
-// Next.js automatically wires the resulting <meta property="og:image">
-// (and width / height / type) into the page <head> because the file is
-// colocated with /s/[subdomain]/page.tsx.
-//
-// Note on font loading: we deliberately don't ship custom fonts here.
-// Satori falls back to system fonts which is enough for an OG card and
-// keeps the image generator fast (no font parse on every miss).
+// Dynamic OG image (1200×630 PNG) rendered by Satori — auto-wired into <meta property="og:image"> via colocation with page.tsx.
 
 import { ImageResponse } from "next/og";
 import { siteTag } from "../../_lib/cacheTags";
@@ -36,8 +21,7 @@ const TEMPLATE_LABEL: Record<string, string> = {
   restaurant: "РЕСТОРАН",
 };
 
-// Per-template accent colour. Keeps each OG image visually tied to the
-// template's hero palette so the link preview matches the landing page.
+// Accent colour ties the OG card to the template's hero palette.
 const TEMPLATE_ACCENT: Record<string, string> = {
   sto: "#F59E0B",
   "beauty-salon": "#C9A86C",
@@ -81,8 +65,7 @@ export default async function Image({
     ? TEMPLATE_ACCENT[site.templateKey] ?? "#F59E0B"
     : "#F59E0B";
 
-  // Description text comes from either explicit description, tagline,
-  // or — last resort — phone/address so the card is never empty.
+  // Falls through description → tagline → phone/address so the card is never empty.
   const c = site?.contentJson ?? {};
   const subtitle =
     str(c.description) ??
@@ -134,8 +117,7 @@ export default async function Image({
               fontWeight: 800,
               lineHeight: 1.05,
               letterSpacing: -2,
-              // Satori doesn't support multi-line clamp; rely on font-size to
-              // keep typical Ukrainian business names on 1-2 lines.
+              // Satori has no multi-line clamp — font-size keeps UA names on 1-2 lines.
             }}
           >
             {businessName}
@@ -146,8 +128,7 @@ export default async function Image({
                 fontSize: 32,
                 lineHeight: 1.3,
                 color: "#CBD5E1",
-                // Hard cap so very long descriptions don't push the footer off
-                // the canvas — Satori has no native ellipsis either.
+                // Hard cap — Satori has no ellipsis, long text would overflow the canvas.
                 maxWidth: 1000,
               }}
             >

@@ -2,16 +2,7 @@ import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { SITEMAP_TAG } from "./_lib/cacheTags";
 
-// SEO: generated sitemap for whichever host the request lands on.
-//
-// Two modes:
-//   1) Root domain (storinka.ua)         → marketing pages + ALL active
-//      client subdomains. Helps Google discover newly published sites.
-//   2) Subdomain (<name>.storinka.ua)    → only that single site's root URL.
-//      Each client site is independent in Google's eyes; cross-listing
-//      siblings here would be wrong (they're not pages of THIS site).
-//
-// The route is forced dynamic via headers() — same code path serves both.
+// Host-aware sitemap: root domain lists all active subdomains; each subdomain serves only itself.
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 const SITES_ROOT = process.env.NEXT_PUBLIC_SITES_ROOT ?? "storinka.ua";
@@ -54,8 +45,7 @@ function parseHost(host: string): { subdomain: string | null; root: string } {
   const first = parts[0];
   const root = parts.slice(1).join(".");
 
-  // Treat reserved (www, admin, ...) as "root" — these are platform surfaces,
-  // not client sites.
+  // Reserved subdomains (www, admin, ...) are platform surfaces, not client sites.
   if (RESERVED_SUBDOMAINS.has(first)) {
     return { subdomain: null, root };
   }

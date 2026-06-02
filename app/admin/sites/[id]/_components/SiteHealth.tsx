@@ -2,14 +2,7 @@
 
 import type { TemplateField } from "../../_components/ContentForm";
 
-// SEO / completeness checklist for a single site. Computed entirely on the
-// frontend from the data we already have (no extra fetch) so the UI updates
-// the moment the owner edits a field.
-//
-// Why this exists: an empty default template will tank the site's SEO — same
-// description as 500 other STOs, no description tag, no phone for rich
-// snippets. Without an explicit nudge, owners never realise that's WHY they
-// have no leads. The checklist makes the gap obvious and actionable.
+// Client-computed SEO completeness checklist — updates live as the owner edits fields.
 
 type Level = "required" | "recommended" | "optional";
 
@@ -30,8 +23,7 @@ type Props = {
   };
 };
 
-/** Stand-alone — exported so the parent tab strip can show a badge with the
- *  same count without rendering the full component. */
+/** Exported so the parent tab strip can show the count without rendering the full component. */
 export function buildChecklist(
   template: Props["template"],
   content: Props["content"],
@@ -42,12 +34,10 @@ export function buildChecklist(
   const value = (k: string) => String(content[k] ?? "").trim();
   const hasContent = (k: string, min = 1) => value(k).length >= min;
 
-  // Template-driven fields. The template owns its own definition of what's
-  // required so this loop works for any future template without changes.
+  // Template owns its own required-field definition — loop works for any future template.
   const fields = template?.schemaJson?.fields ?? [];
   for (const f of fields) {
-    // Skip non-text/structural fields — we can't meaningfully check images
-    // or colours for "completeness" the same way as text.
+    // Skip colour/non-text fields — can't meaningfully check completeness.
     if (f.type === "color") continue;
 
     const min = f.key === "description" ? 50 : 1;
@@ -82,8 +72,7 @@ export function buildChecklist(
   return items;
 }
 
-/** Number of unpassed REQUIRED items — drives the tab badge. We deliberately
- *  ignore recommended/optional so the badge stays a "real problem" signal. */
+/** Count of failed REQUIRED items only — keeps the tab badge a real-problem signal. */
 export function countMissingRequired(items: CheckItem[]): number {
   return items.filter((i) => !i.passed && i.level === "required").length;
 }
@@ -95,8 +84,7 @@ export default function SiteHealth({ template, content, seo }: Props) {
   const total = items.length;
   const percent = total === 0 ? 100 : Math.round((passed / total) * 100);
 
-  // Sort failed items to the top (within failed, required first). Within
-  // passed, keep insertion order. This puts "what to fix" at the top.
+  // Failed first (required > recommended > optional), then passed in insertion order.
   const sorted = [...items].sort((a, b) => {
     if (a.passed !== b.passed) return a.passed ? 1 : -1;
     if (a.passed) return 0;
@@ -138,8 +126,7 @@ function ScoreCard({
   total: number;
   percent: number;
 }) {
-  // Color the bar by tier so the score communicates at a glance:
-  //   < 50% red, < 80% amber, ≥ 80% green.
+  // < 50% red, < 80% amber, ≥ 80% green.
   const tier =
     percent >= 80
       ? { bar: "bg-green-500", text: "text-green-700", label: "Чудово" }

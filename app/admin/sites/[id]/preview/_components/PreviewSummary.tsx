@@ -413,11 +413,7 @@ function PrimaryAction({
   const [error, setError] = useState<string | null>(null);
 
   async function publishWithStubPayment() {
-    // No payment provider yet — fake the latency, then call the existing
-    // publish endpoint which flips the site to ACTIVE. When Stripe Checkout
-    // lands this whole function is replaced by a `POST /api/payments/checkout`
-    // call that redirects to Stripe; the success URL there will hit /publish
-    // server-side via the webhook.
+    // No payment provider yet — fake latency, then /publish to flip ACTIVE (Stripe Checkout later).
     setBusy(true);
     setError(null);
     try {
@@ -542,8 +538,7 @@ function PrimaryAction({
 }
 
 function InfoCard({ status }: { status: SiteStatus }) {
-  // Card content adapts to status: onboarding facts for unpaid states,
-  // operational facts for live states. SUSPENDED gets a resume-focused note.
+  // Content adapts to status: onboarding for unpaid, operational for live, resume for suspended.
   let title: string;
   let bullets: string[];
 

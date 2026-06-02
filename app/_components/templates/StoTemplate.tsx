@@ -40,8 +40,7 @@ const DEFAULTS: ResolvedContent = {
   email: "info@sto.ua",
 };
 
-// Services can come in as a string with newlines, semicolons or commas.
-// We accept any of these so the user isn't locked into one format.
+// Accept newline/semicolon/comma separators so the user isn't locked into one format.
 function parseServices(raw: string | undefined): string[] {
   if (!raw) return DEFAULTS.services;
   const items = raw

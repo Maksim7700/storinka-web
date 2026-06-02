@@ -17,8 +17,7 @@ type PublicSite = {
 };
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
-// Root domain used to build canonical / openGraph URLs. Override in prod
-// via NEXT_PUBLIC_SITES_ROOT (e.g. "storinka.ua").
+// Override via NEXT_PUBLIC_SITES_ROOT for prod (e.g. "storinka.ua").
 const SITES_ROOT = process.env.NEXT_PUBLIC_SITES_ROOT ?? "storinka.ua";
 
 // React cache() dedupes within a request; ISR + tag handles cross-request caching with admin invalidation via revalidateSite().
@@ -34,9 +33,7 @@ const loadSite = cache(async (subdomain: string): Promise<PublicSite | null> => 
   return res.json();
 });
 
-// Human-readable suffix per template — appears after the business name in
-// the browser tab and search results (e.g. "Авто-Майстер — СТО ..."). Keep
-// titles under ~60 chars so Google doesn't truncate them.
+// Per-template suffix appended to the business name in tab/search titles (keep under 60 chars total).
 const TEMPLATE_SUFFIX: Record<string, string> = {
   sto: "СТО · ремонт авто",
   "beauty-salon": "Салон краси",
@@ -49,9 +46,7 @@ function titleFor(site: PublicSite): string {
 }
 
 function descriptionFor(site: PublicSite): string {
-  // Prefer the owner's own copy; fall back to a per-template generic line.
-  // Generic copy is *better than nothing* for SEO, but every site sharing
-  // it will look duplicate to Google — encourage owners to write their own.
+  // Owner's copy wins; fallback is per-template generic (duplicate across sites — SEO mediocre).
   const content = site.contentJson as Record<string, unknown>;
   const explicit = content.description ?? content.tagline;
   if (typeof explicit === "string" && explicit.trim()) {
@@ -78,9 +73,7 @@ export async function generateMetadata({
   const site = await loadSite(subdomain);
 
   if (!site) {
-    // Even the 404 needs an absolute title — otherwise Next applies the root
-    // "%s | Storinka" template and we'd render "Сайт не знайдено | Storinka"
-    // for a non-existent client site.
+    // `absolute` bypasses the root "%s | Storinka" template.
     return { title: { absolute: "Сайт не знайдено" } };
   }
 
@@ -90,8 +83,7 @@ export async function generateMetadata({
   const businessName = String(site.contentJson.businessName ?? subdomain);
 
   return {
-    // `absolute` bypasses the root layout's title template. The client's
-    // brand stands alone — no "| Storinka" suffix on their public site.
+    // Client's brand stands alone — no "| Storinka" suffix.
     title: { absolute: title },
     description,
     alternates: { canonical },
@@ -109,8 +101,7 @@ export async function generateMetadata({
       description,
     },
     robots: { index: true, follow: true },
-    // Renders <meta name="google-site-verification" content="..."> so the
-    // owner can claim the property in Google Search Console.
+    // Renders <meta name="google-site-verification"> for GSC property claim.
     ...(site.gscVerification
       ? { verification: { google: site.gscVerification } }
       : {}),
@@ -128,24 +119,19 @@ export default async function PublicSitePage({
 
   const Component = getTemplateComponent(site.templateKey);
   if (!Component) {
-    // The template was published but its React component isn't registered
-    // yet. Surface this as not-found rather than a blank page.
+    // Template published but no React component registered yet.
     notFound();
   }
 
   const jsonLd = buildJsonLd(site, SITES_ROOT);
 
-  // GA4 measurement IDs start with "G-". We sanity-check the format here so
-  // a typo in the admin can't inject arbitrary script content via gtag URL.
+  // Validate ID format so an admin typo can't inject arbitrary script via gtag URL.
   const gaId = isValidGaId(site.gaMeasurementId) ? site.gaMeasurementId : null;
 
   return (
     <>
       {jsonLd && (
-        // JSON-LD is a static, server-rendered <script> — Google reads it
-        // from the initial HTML. dangerouslySetInnerHTML is correct here:
-        // we control the input (no user-supplied HTML), and serialiseJsonLd
-        // escapes the only injection vector inside JSON (`</`).
+        // serialiseJsonLd escapes `</`; input is controlled, so dangerouslySetInnerHTML is safe here.
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serialiseJsonLd(jsonLd) }}
@@ -153,8 +139,7 @@ export default async function PublicSitePage({
       )}
 
       {gaId && (
-        // Google Analytics 4 via gtag. `afterInteractive` so it loads after
-        // the page is interactive — analytics never block the user.
+        // GA4 via gtag, deferred to afterInteractive so analytics never blocks.
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
@@ -176,8 +161,7 @@ export default async function PublicSitePage({
   );
 }
 
-// Accept G-, UA-, AW- and DC- prefixes (all valid Google tag IDs), with
-// only safe characters in the suffix. Anything else is silently dropped.
+// Accept G-/UA-/AW-/DC- prefixes with safe suffix chars only; anything else is dropped.
 function isValidGaId(id: string | null | undefined): id is string {
   if (!id) return false;
   return /^(G|UA|AW|DC)-[A-Z0-9-]{3,30}$/i.test(id);

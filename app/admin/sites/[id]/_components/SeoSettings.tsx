@@ -34,15 +34,11 @@ export default function SeoSettings({
   const [state, setState] = useState<SaveState>("idle");
   const [error, setError] = useState<string | null>(null);
 
-  // Deep link straight to this site's GSC overview — saves the owner from
-  // hunting through the property picker. `resource_id` is the URL-encoded
-  // canonical URL of the site (URL-prefix property format).
+  // Deep link to this site's GSC overview (resource_id = URL-encoded canonical URL).
   const gscDashboardUrl = `https://search.google.com/search-console?resource_id=${encodeURIComponent(
     `https://${subdomain}.${ROOT_DOMAIN}/`,
   )}`;
-  // GA doesn't expose a deep link by site URL (it uses internal property IDs
-  // we don't know without OAuth). The home page lists all properties so the
-  // owner can pick theirs — still one click better than typing the URL.
+  // GA has no per-URL deep link (needs OAuth for property IDs) — home page is the best we can do.
   const gaDashboardUrl = "https://analytics.google.com/";
 
   const dirty =
@@ -283,9 +279,7 @@ function DashboardLink({
   href: string;
   children: React.ReactNode;
 }) {
-  // Prominent "view your data" CTA. Visually distinct from the inline help
-  // links inside <Disclosure> — this one is THE action of the card after
-  // the verification code is in place.
+  // Primary "view your data" CTA after the verification code is in place.
   return (
     <a
       href={href}
@@ -306,8 +300,7 @@ function Disclosure({
   label: string;
   children: React.ReactNode;
 }) {
-  // Native <details> gives us toggle-on-click + keyboard support for free.
-  // Saves ~30 lines of state + animation code for this MVP.
+  // Native <details> covers toggle + keyboard for free.
   return (
     <details className="group">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-gray-900">

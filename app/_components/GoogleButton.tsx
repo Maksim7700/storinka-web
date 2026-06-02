@@ -37,10 +37,7 @@ declare global {
   }
 }
 
-/**
- * Load the Google Identity Services script once. Idempotent — multiple
- * GoogleButton instances on the same page share a single <script> tag.
- */
+/** Idempotently load Google Identity Services; multiple buttons share one <script>. */
 function loadGsi(): Promise<void> {
   if (typeof window === "undefined") {
     return Promise.resolve();
@@ -69,8 +66,7 @@ function loadGsi(): Promise<void> {
 }
 
 type Props = {
-  /** Which page the button is on. The backend uses this to reject "login"
-   *  attempts for unknown Google emails (no silent auto-registration). */
+  /** Backend uses this to reject login attempts for unknown Google emails. */
   intent: "login" | "register";
   /** Surface backend errors (404 / 409 / 503 / etc.) to the parent form. */
   onError?: (message: string) => void;
@@ -112,8 +108,7 @@ export default function GoogleButton({
     return () => {
       cancelled = true;
     };
-    // handleCredential is stable enough; we intentionally omit it to avoid
-    // re-rendering the Google button on every parent re-render.
+    // handleCredential omitted to avoid re-rendering the GIS button on parent updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
@@ -130,15 +125,13 @@ export default function GoogleButton({
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         if (res.status === 404) {
-          // Login intent + no existing Google account. Backend's Ukrainian
-          // message already says "register first" — pass it through.
+          // Login intent + unknown Google account — pass backend's UA message through.
           onError?.(
             body?.message ??
               "Акаунт з таким Google email не знайдено. Зареєструйтесь.",
           );
         } else if (res.status === 409) {
-          // Backend distinguishes "this email is registered via email/password"
-          // with a Ukrainian message — pass it through.
+          // Email already registered via password — pass backend's UA message through.
           onError?.(
             body?.message ??
               "Цей email зареєстровано через email/пароль. Увійдіть звичайним способом.",
@@ -189,7 +182,6 @@ export default function GoogleButton({
     );
   }
 
-  // GIS renders its own button inside this div. The min-height prevents
-  // layout shift while the script is loading.
+  // min-height prevents layout shift while GIS script is loading.
   return <div ref={containerRef} className="flex min-h-[44px] justify-center" />;
 }

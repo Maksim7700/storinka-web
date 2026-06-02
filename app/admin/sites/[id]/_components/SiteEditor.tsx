@@ -65,9 +65,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
-  // Right panel is now tabbed: content fields vs SEO/analytics integrations.
-  // SEO has its own save flow (different endpoint) so the top-toolbar save
-  // is hidden when the SEO tab is active.
+  // Tabbed right panel; SEO has its own save flow so the top-toolbar save hides on that tab.
   const [tab, setTab] = useState<EditorTab>("content");
 
   // Load site → then load its template (need schema_json for the form).
@@ -101,9 +99,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
         const loadedSite: Site = await siteRes.json();
         if (cancelled) return;
 
-        // DRAFT sites belong in the create/edit wizard — this full-page editor
-        // doesn't have a payment path, so a draft owner who lands here would
-        // hit a dead end. Send them to the wizard instead.
+        // DRAFT belongs in the wizard (this editor has no payment path).
         if (loadedSite.status === "DRAFT") {
           router.replace(`/admin/sites/${loadedSite.id}/edit`);
           return;
@@ -182,9 +178,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
 
   async function handleStatusAction() {
     if (!site) return;
-    // Only ACTIVE → SUSPENDED and SUSPENDED → ACTIVE use the publish/unpublish
-    // endpoints here. DRAFT and INACTIVE need payment, so the editor renders
-    // a link to /preview for those (not this button).
+    // ACTIVE↔SUSPENDED only — DRAFT/INACTIVE go through /preview for payment.
     const action = site.status === "ACTIVE" ? "unpublish" : "publish";
     setPublishing(true);
     setPublishError(null);
@@ -358,8 +352,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
           <div
             role="tabpanel"
             className="flex-1 overflow-y-auto p-6"
-            // The `key` resets internal state (scroll position, etc.) when
-            // switching tabs — feels more like distinct screens.
+            // `key` resets internal state on tab switch — feels like distinct screens.
             key={tab}
           >
             {tab === "content" && (
@@ -456,8 +449,7 @@ function StatusAction({
   publishing: boolean;
   onClick: () => void;
 }) {
-  // DRAFT/INACTIVE need a payment, so we link to the preview/payment page
-  // rather than calling an API. ACTIVE/SUSPENDED toggle via PATCH.
+  // DRAFT/INACTIVE link to /preview for payment; ACTIVE/SUSPENDED toggle via PATCH.
   const baseClass =
     "flex h-10 items-center gap-2 rounded-[10px] px-4 text-sm font-semibold transition disabled:opacity-60 cursor-pointer";
 

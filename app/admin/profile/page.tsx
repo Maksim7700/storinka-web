@@ -99,8 +99,7 @@ export default function ProfilePage() {
           profile={profile}
           onSaved={(p) => {
             setProfile(p);
-            // Keep localStorage user-cache in sync so other surfaces
-            // (Sidebar, etc.) pick up the new name without a reload.
+            // Keep user-cache in sync so Sidebar etc. pick up the new name without reload.
             try {
               const cached = localStorage.getItem("user");
               if (cached) {
@@ -331,8 +330,7 @@ function SecuritySection() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (res.status === 401) {
-        // Could mean current password wrong OR session expired.
-        // Backend returns 401 for wrong-password — distinguish via body.
+        // 401 covers both wrong-password and expired-session — distinguish via body.
         const body = await res.json().catch(() => null);
         if (body?.message?.toLowerCase().includes("password")) {
           setError(body.message);

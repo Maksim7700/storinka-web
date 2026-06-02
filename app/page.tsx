@@ -35,17 +35,14 @@ const CATEGORY_META: Record<string, { label: string; bg: string }> = {
   business: { label: "БІЗНЕС", bg: "#10B981" },
 };
 
-// Uniform license fee for any template; monthly subscription varies per
-// template (comes from DB on each TemplateSummary).
+// Uniform license fee; per-template monthly fee comes from TemplateSummary.
 const LICENSE_PRICE = 2000;
-// Starting subscription price shown in marketing copy ("від X грн/міс").
-// The actual monthly fee for a given template lives on TemplateSummary.
+// Marketing floor ("від X грн/міс"); real per-template price is on TemplateSummary.
 const SUBSCRIPTION_FROM = 490;
 
 const numberFormat = new Intl.NumberFormat("uk-UA");
 
-// Best-effort: if the backend is down (cold start, local dev with API off),
-// the landing should still render — just without the live templates section.
+// Best-effort: backend down → landing still renders, just without templates.
 async function fetchTemplates(): Promise<TemplateSummary[]> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/templates`, {

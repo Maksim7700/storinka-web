@@ -89,10 +89,7 @@ function renderControl(
         />
       );
     case "textarea":
-      // Multi-line variant of `string`. Used for SEO descriptions and any
-      // free-form copy that wouldn't fit comfortably on a single line.
-      // We don't reuse INPUT_CLASS because of its fixed h-12 — order-of-
-      // classes resolution against h-auto would be brittle.
+      // INPUT_CLASS not reused — its fixed h-12 conflicts with textarea's h-auto.
       return (
         <textarea
           id={field.key}
@@ -140,8 +137,7 @@ function ColorControl({
   value: string;
   onChange: (v: string) => void;
 }) {
-  // Compound input: native color picker swatch on the left, editable hex text
-  // on the right. Both sync to the same value.
+  // Compound: color picker swatch + editable hex text, both sync to one value.
   return (
     <div className="flex h-12 items-center gap-3 rounded-[10px] border border-[#C8C8C8] bg-white px-3">
       <input
@@ -180,8 +176,7 @@ function ImageControl({
     setError(null);
     setUploading(true);
     try {
-      // Token lives in localStorage (see /login flow). The backend rejects
-      // unauthenticated POSTs with 401.
+      // Backend rejects unauthenticated POSTs with 401.
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const fd = new FormData();

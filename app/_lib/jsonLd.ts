@@ -1,18 +1,4 @@
-// Schema.org / JSON-LD builder for public site pages.
-//
-// What this is for: Google reads <script type="application/ld+json"> blocks
-// to understand a page's entities (business, address, phone, opening hours,
-// services...). Properly tagged local-business pages get "rich results" —
-// the phone / map / star rating displayed directly in search results.
-// Without JSON-LD, Google has to guess from the HTML and often guesses wrong.
-//
-// Each template maps to the most specific Schema.org type Google supports
-// for that vertical:
-//   - sto          → AutoRepair
-//   - beauty-salon → BeautySalon
-//
-// Both extend LocalBusiness, so common fields (name, telephone, address,
-// image, url, priceRange) work the same way.
+// Schema.org JSON-LD builder for public sites — maps each template to the most specific LocalBusiness subtype Google supports.
 
 type SiteForJsonLd = {
   subdomain: string;
@@ -25,9 +11,7 @@ type LocalBusinessJsonLd = {
   "@type": string;
   name: string;
   url: string;
-  // Fields below are all optional in schema.org — included only when we
-  // have real values for them. Omitting beats faking, because Google may
-  // penalise contradictory data (e.g. a fake address that doesn't exist).
+  // Optional in schema.org — omit when missing to avoid Google penalising fake data.
   telephone?: string;
   email?: string;
   image?: string;
@@ -73,14 +57,10 @@ function buildUrl(subdomain: string, root: string): string {
   return `https://${subdomain}.${root}`;
 }
 
-// Resolve an image field that may be a relative path (e.g. "/api/files/xxx")
-// to an absolute URL Google can fetch. JSON-LD images should be absolute.
+// JSON-LD images must be absolute URLs — resolve relative paths through the api subdomain.
 function absolutiseImage(image: string | undefined, root: string): string | undefined {
   if (!image) return undefined;
   if (image.startsWith("http://") || image.startsWith("https://")) return image;
-  // Files live on the backend; in prod we'll have a public CDN/proxy URL.
-  // For now, hard-code the root domain — the proxy in next.config.ts forwards
-  // /api/* to the backend, so the same path works from any subdomain.
   return `https://api.${root}${image.startsWith("/") ? image : `/${image}`}`;
 }
 
@@ -111,9 +91,7 @@ export function buildJsonLd(
   const image = absolutiseImage(str(c.photo), sitesRoot);
   if (image) jsonLd.image = image;
 
-  // Loose street address. We don't ask for city/country separately yet, so
-  // we just hand Google whatever the owner typed. The country tag is safe
-  // to hard-code — Storinka is UA-only for now.
+  // Storinka is UA-only for now, so hard-code the country tag.
   const address = str(c.address) ?? str(c.map);
   if (address) {
     jsonLd.address = {
@@ -139,11 +117,7 @@ export function buildJsonLd(
   return jsonLd;
 }
 
-/**
- * Safely serialise the JSON-LD object for embedding inside a <script> tag.
- * The only dangerous sequence inside JSON is `</`, which can prematurely
- * close the script element. Escape it to `<\/`.
- */
+/** Serialise JSON-LD for a <script> tag — escapes `</` to prevent early element close. */
 export function serialiseJsonLd(jsonLd: unknown): string {
   return JSON.stringify(jsonLd).replace(/<\//g, "<\\/");
 }
