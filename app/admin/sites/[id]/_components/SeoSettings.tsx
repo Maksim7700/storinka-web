@@ -84,10 +84,7 @@ export default function SeoSettings({
         gscVerification: saved.gscVerification ?? null,
         gaMeasurementId: saved.gaMeasurementId ?? null,
       });
-      // GSC verification meta tag and GA4 script are rendered into the
-      // public page <head> by /s/[subdomain]/page.tsx — bust its cache so
-      // a fresh "claim this property" verification doesn't sit behind a
-      // stale 5min window.
+      // GSC/GA tags render into the public page <head>, so bust its cache.
       void revalidateSite(subdomain);
       setState("saved");
       setTimeout(() => setState((s) => (s === "saved" ? "idle" : s)), 2000);
