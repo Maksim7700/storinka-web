@@ -33,10 +33,7 @@ type SitemapEntry = { subdomain: string; updatedAt: string };
 async function fetchAllSites(): Promise<SitemapEntry[]> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/vendors/sitemap`, {
-      // Sitemap shouldn't be stale by more than an hour; Google re-fetches
-      // periodically anyway. The tag is invalidated by revalidateSite()
-      // on publish/unpublish so newly active sites are listed without
-      // waiting for the hourly window.
+      // Hourly auto-refresh; revalidateSite() busts the tag on publish/unpublish.
       next: { revalidate: 3600, tags: [SITEMAP_TAG] },
     });
     if (!res.ok) return [];

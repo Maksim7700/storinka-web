@@ -167,10 +167,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
         setSaveState("error");
         return;
       }
-      // Fire-and-forget: invalidate the Next data cache for this site so
-      // the public page reflects the new content on the next visit. We
-      // don't await — the UI shouldn't block on cache plumbing, and a
-      // failure here just means the 5min auto-revalidate kicks in instead.
+      // Fire-and-forget cache bust; 5min auto-revalidate is the fallback.
       void revalidateSite(site.subdomain);
       setSaveState("saved");
       // Reset to idle after a short delay so the button label flips back.
@@ -208,9 +205,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
       }
       const updated: Site = await res.json();
       setSite(updated);
-      // Publish/unpublish changes BOTH the site itself (visible vs 404)
-      // AND the cross-site sitemap (a site appears/disappears from the
-      // listing). Invalidate both tags in one go.
+      // Publish/unpublish also flips the site's presence in the sitemap.
       void revalidateSite(updated.subdomain, { invalidateSitemap: true });
     } catch {
       setPublishError("Не вдалось підключитись до сервера");

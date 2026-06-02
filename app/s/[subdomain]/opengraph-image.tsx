@@ -44,10 +44,7 @@ const TEMPLATE_ACCENT: Record<string, string> = {
   restaurant: "#DC2626",
 };
 
-// Shares the same cache tag as the public page fetch — when the owner
-// saves new content, both the HTML <meta> tags AND the rendered OG card
-// image invalidate together. Otherwise social previews could show a
-// stale business name long after the site was renamed.
+// Shares the page's cache tag so OG card invalidates with the HTML on save.
 async function loadSite(subdomain: string): Promise<PublicSite | null> {
   try {
     const res = await fetch(

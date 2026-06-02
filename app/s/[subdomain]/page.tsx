@@ -21,19 +21,7 @@ const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 // via NEXT_PUBLIC_SITES_ROOT (e.g. "storinka.ua").
 const SITES_ROOT = process.env.NEXT_PUBLIC_SITES_ROOT ?? "storinka.ua";
 
-// React `cache()` dedupes the call within a single request, so both
-// generateMetadata and the page component reuse one HTTP fetch.
-//
-// Caching strategy (was: cache: "no-store" — every visit hit Spring):
-//   - `revalidate: 300` — auto-refresh at most every 5min. Picks up
-//     content edits that bypassed the explicit invalidation (e.g. a
-//     write made directly against the backend outside the admin UI).
-//   - `tags: [siteTag(subdomain)]` — paired with `updateTag(...)` in
-//     the revalidateSite Server Action so admin saves invalidate the
-//     cache *immediately* on publish / content change / SEO change.
-// Net effect: cold visits read from Spring, warm visits read from the
-// Next data cache, and the owner's own saves are reflected on the next
-// request without waiting for the 5min window.
+// React cache() dedupes within a request; ISR + tag handles cross-request caching with admin invalidation via revalidateSite().
 const loadSite = cache(async (subdomain: string): Promise<PublicSite | null> => {
   const res = await fetch(
     `${BACKEND_URL}/api/vendors/${encodeURIComponent(subdomain)}/site`,
