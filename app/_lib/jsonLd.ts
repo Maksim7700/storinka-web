@@ -10,9 +10,8 @@
 // for that vertical:
 //   - sto          → AutoRepair
 //   - beauty-salon → BeautySalon
-//   - restaurant   → Restaurant
 //
-// All three extend LocalBusiness, so common fields (name, telephone, address,
+// Both extend LocalBusiness, so common fields (name, telephone, address,
 // image, url, priceRange) work the same way.
 
 type SiteForJsonLd = {
@@ -38,7 +37,6 @@ type LocalBusinessJsonLd = {
     streetAddress?: string;
     addressCountry: "UA";
   };
-  servesCuisine?: string;
   hasOfferCatalog?: {
     "@type": "OfferCatalog";
     name: string;
@@ -52,7 +50,6 @@ type LocalBusinessJsonLd = {
 const TYPE_BY_TEMPLATE: Record<string, string> = {
   sto: "AutoRepair",
   "beauty-salon": "BeautySalon",
-  restaurant: "Restaurant",
 };
 
 function str(v: unknown): string | undefined {
@@ -124,12 +121,6 @@ export function buildJsonLd(
       streetAddress: address,
       addressCountry: "UA",
     };
-  }
-
-  // Restaurant-specific
-  const cuisine = str(c.cuisine);
-  if (cuisine && type === "Restaurant") {
-    jsonLd.servesCuisine = cuisine;
   }
 
   // List of services as an OfferCatalog — STO has this as a free-form field.

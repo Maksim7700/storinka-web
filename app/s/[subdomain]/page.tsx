@@ -40,7 +40,6 @@ const loadSite = cache(async (subdomain: string): Promise<PublicSite | null> => 
 const TEMPLATE_SUFFIX: Record<string, string> = {
   sto: "СТО · ремонт авто",
   "beauty-salon": "Салон краси",
-  restaurant: "Ресторан",
 };
 
 function titleFor(site: PublicSite): string {
@@ -65,8 +64,6 @@ function descriptionFor(site: PublicSite): string {
       return `${name}: ремонт авто, діагностика, ТО. Чесні строки та прозорі ціни. Записатись за телефоном.`;
     case "beauty-salon":
       return `${name}: салон краси. Стрижки, фарбування, манікюр, догляд. Запис онлайн.`;
-    case "restaurant":
-      return `${name}: меню, бронювання столика, доставка.`;
     default:
       return name;
   }

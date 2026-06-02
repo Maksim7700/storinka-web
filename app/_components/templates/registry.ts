@@ -7,8 +7,6 @@ import type { TemplateComponent } from "./types";
 const TEMPLATE_COMPONENTS: Record<string, TemplateComponent> = {
   "beauty-salon": BeautySalonTemplate,
   sto: StoTemplate,
-  // 'restaurant' will get its own template; preview falls back gracefully
-  // until it's implemented.
 };
 
 export function getTemplateComponent(key: string): TemplateComponent | null {

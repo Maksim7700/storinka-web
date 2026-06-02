@@ -10,6 +10,10 @@ import ContentForm, {
   type TemplateField,
 } from "../../_components/ContentForm";
 import SeoSettings from "./SeoSettings";
+import SiteHealth, {
+  buildChecklist,
+  countMissingRequired,
+} from "./SiteHealth";
 
 type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
 
@@ -44,7 +48,7 @@ type Template = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
-type EditorTab = "content" | "seo";
+type EditorTab = "content" | "seo" | "health";
 
 export default function SiteEditor({ siteId }: { siteId: number }) {
   const router = useRouter();
@@ -310,22 +314,41 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
           className="flex w-[380px] shrink-0 flex-col overflow-hidden border-l border-[#E6E6E6] bg-white"
           aria-label="Форма редагування"
         >
-          {/* Tab strip — sticks to top of the panel, content below scrolls. */}
-          <div
-            role="tablist"
-            aria-label="Розділи редагування сайту"
-            className="flex shrink-0 border-b border-[#E6E6E6] px-3"
-          >
-            <TabButton
-              active={tab === "content"}
-              onClick={() => setTab("content")}
-            >
-              Контент
-            </TabButton>
-            <TabButton active={tab === "seo"} onClick={() => setTab("seo")}>
-              SEO
-            </TabButton>
-          </div>
+          {/* Tab strip — sticks to top of the panel, content below scrolls.
+              `missingCount` drives the badge on Перевірка: only failed REQUIRED
+              items count, otherwise the badge would scream forever about
+              recommendations. */}
+          {(() => {
+            const checklist = buildChecklist(template, content, {
+              gscVerification: site.gscVerification,
+              gaMeasurementId: site.gaMeasurementId,
+            });
+            const missingCount = countMissingRequired(checklist);
+            return (
+              <div
+                role="tablist"
+                aria-label="Розділи редагування сайту"
+                className="flex shrink-0 border-b border-[#E6E6E6] px-3"
+              >
+                <TabButton
+                  active={tab === "content"}
+                  onClick={() => setTab("content")}
+                >
+                  Контент
+                </TabButton>
+                <TabButton active={tab === "seo"} onClick={() => setTab("seo")}>
+                  SEO
+                </TabButton>
+                <TabButton
+                  active={tab === "health"}
+                  onClick={() => setTab("health")}
+                  badge={missingCount > 0 ? missingCount : undefined}
+                >
+                  Перевірка
+                </TabButton>
+              </div>
+            );
+          })()}
 
           <div
             role="tabpanel"
@@ -334,13 +357,14 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
             // switching tabs — feels more like distinct screens.
             key={tab}
           >
-            {tab === "content" ? (
+            {tab === "content" && (
               <ContentForm
                 fields={fields}
                 values={content}
                 onChange={updateField}
               />
-            ) : (
+            )}
+            {tab === "seo" && (
               <SeoSettings
                 siteId={site.id}
                 subdomain={site.subdomain}
@@ -351,6 +375,16 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
                 onSaved={(values) =>
                   setSite((prev) => (prev ? { ...prev, ...values } : prev))
                 }
+              />
+            )}
+            {tab === "health" && (
+              <SiteHealth
+                template={template}
+                content={content}
+                seo={{
+                  gscVerification: site.gscVerification,
+                  gaMeasurementId: site.gaMeasurementId,
+                }}
               />
             )}
           </div>
@@ -365,10 +399,13 @@ function TabButton({
   active,
   onClick,
   children,
+  badge,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  /** Small red counter pill, e.g. number of unaddressed required items. */
+  badge?: number;
 }) {
   return (
     <button
@@ -376,13 +413,21 @@ function TabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`relative cursor-pointer px-3 py-3 text-sm transition ${
+      className={`relative flex cursor-pointer items-center gap-1.5 px-3 py-3 text-sm transition ${
         active
           ? "font-semibold text-neutral-900"
           : "font-medium text-gray-500 hover:text-gray-900"
       }`}
     >
       {children}
+      {badge !== undefined && badge > 0 && (
+        <span
+          className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
+          aria-label={`${badge} незавершених пунктів`}
+        >
+          {badge}
+        </span>
+      )}
       {/* Underline indicator — sits on the parent's bottom border for a
           flush "selected tab" look without shifting layout. */}
       {active && (
