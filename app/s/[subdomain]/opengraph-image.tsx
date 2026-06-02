@@ -16,6 +16,7 @@
 // keeps the image generator fast (no font parse on every miss).
 
 import { ImageResponse } from "next/og";
+import { siteTag } from "../../_lib/cacheTags";
 
 export const alt = "Storinka";
 export const size = { width: 1200, height: 630 };
@@ -43,11 +44,15 @@ const TEMPLATE_ACCENT: Record<string, string> = {
   restaurant: "#DC2626",
 };
 
+// Shares the same cache tag as the public page fetch — when the owner
+// saves new content, both the HTML <meta> tags AND the rendered OG card
+// image invalidate together. Otherwise social previews could show a
+// stale business name long after the site was renamed.
 async function loadSite(subdomain: string): Promise<PublicSite | null> {
   try {
     const res = await fetch(
       `${BACKEND_URL}/api/vendors/${encodeURIComponent(subdomain)}/site`,
-      { cache: "no-store" },
+      { next: { revalidate: 300, tags: [siteTag(subdomain)] } },
     );
     if (!res.ok) return null;
     return await res.json();
