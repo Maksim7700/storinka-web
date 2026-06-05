@@ -31,10 +31,16 @@ type LocalBusinessJsonLd = {
   };
 };
 
+// Specific Schema.org subtypes — pick the most granular type Google supports
+// per vertical, so the rich-snippet treatment matches the business kind.
+// Unknown templates fall through to generic "LocalBusiness" in buildJsonLd.
 const TYPE_BY_TEMPLATE: Record<string, string> = {
   sto: "AutoRepair",
   "beauty-salon": "BeautySalon",
+  restaurant: "Restaurant",
 };
+
+const FALLBACK_TYPE = "LocalBusiness";
 
 function str(v: unknown): string | undefined {
   if (typeof v !== "string") return undefined;
@@ -67,9 +73,10 @@ function absolutiseImage(image: string | undefined, root: string): string | unde
 export function buildJsonLd(
   site: SiteForJsonLd,
   sitesRoot: string,
-): LocalBusinessJsonLd | null {
-  const type = TYPE_BY_TEMPLATE[site.templateKey];
-  if (!type) return null;
+): LocalBusinessJsonLd {
+  // Future templates without an explicit mapping still get rich-snippet eligibility
+  // via the generic LocalBusiness type — better than emitting nothing.
+  const type = TYPE_BY_TEMPLATE[site.templateKey] ?? FALLBACK_TYPE;
 
   const c = site.contentJson;
   const name = str(c.businessName) ?? site.subdomain;

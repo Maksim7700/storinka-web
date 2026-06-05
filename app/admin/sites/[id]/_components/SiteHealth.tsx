@@ -21,6 +21,9 @@ type Props = {
     gscVerification: string | null;
     gaMeasurementId: string | null;
   };
+  site: {
+    customDomain: string | null;
+  };
 };
 
 /** Exported so the parent tab strip can show the count without rendering the full component. */
@@ -28,6 +31,7 @@ export function buildChecklist(
   template: Props["template"],
   content: Props["content"],
   seo: Props["seo"],
+  site: Props["site"],
 ): CheckItem[] {
   const items: CheckItem[] = [];
 
@@ -36,6 +40,7 @@ export function buildChecklist(
 
   // Template owns its own required-field definition — loop works for any future template.
   const fields = template?.schemaJson?.fields ?? [];
+  const hasField = (key: string) => fields.some((f) => f.key === key);
   for (const f of fields) {
     // Skip colour/non-text fields — can't meaningfully check completeness.
     if (f.type === "color") continue;
@@ -52,6 +57,60 @@ export function buildChecklist(
           : undefined,
     });
   }
+
+  // SEO quality checks (only if the template exposes the relevant field).
+  if (hasField("description")) {
+    const desc = value("description");
+    if (desc.length >= 50) {
+      const inRange = desc.length >= 120 && desc.length <= 160;
+      items.push({
+        id: "quality.description",
+        label: "Опис оптимальної довжини (120-160)",
+        passed: inRange,
+        level: "recommended",
+        hint: inRange
+          ? undefined
+          : desc.length < 120
+            ? `Зараз ${desc.length} символів — додайте ще ~${120 - desc.length} для повного сніпета у Google.`
+            : `Зараз ${desc.length} символів — Google обріже після 160, скоротіть на ${desc.length - 160}.`,
+      });
+    }
+  }
+
+  if (hasField("businessName")) {
+    const name = value("businessName");
+    if (name.length > 0) {
+      items.push({
+        id: "quality.businessName",
+        label: "Назва коротка (≤ 60)",
+        passed: name.length <= 60,
+        level: "recommended",
+        hint: `Зараз ${name.length} символів — Google обрізає назву у видачі.`,
+      });
+    }
+  }
+
+  if (hasField("phone")) {
+    const phone = value("phone");
+    if (phone.length > 0) {
+      items.push({
+        id: "quality.phone",
+        label: "Телефон у міжнародному форматі",
+        passed: /^\+\d/.test(phone),
+        level: "recommended",
+        hint: "Формат +380XXXXXXXXX потрібен для tel: посилань і rich snippets.",
+      });
+    }
+  }
+
+  // Site-level checks — independent of template.
+  items.push({
+    id: "site.customDomain",
+    label: "Підключений власний домен",
+    passed: Boolean((site.customDomain ?? "").trim()),
+    level: "optional",
+    hint: "Власний домен ранжується краще ніж піддомен storinka.ua.",
+  });
 
   // Integration checks — independent of template.
   items.push({
@@ -77,8 +136,8 @@ export function countMissingRequired(items: CheckItem[]): number {
   return items.filter((i) => !i.passed && i.level === "required").length;
 }
 
-export default function SiteHealth({ template, content, seo }: Props) {
-  const items = buildChecklist(template, content, seo);
+export default function SiteHealth({ template, content, seo, site }: Props) {
+  const items = buildChecklist(template, content, seo, site);
 
   const passed = items.filter((i) => i.passed).length;
   const total = items.length;
