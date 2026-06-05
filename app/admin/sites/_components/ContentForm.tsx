@@ -10,15 +10,55 @@ export type TemplateField = {
   required?: boolean;
   placeholder?: string;
   default?: string | number;
+  /** Override the per-type default char limit (see DEFAULT_MAX_LENGTH below). */
+  maxLength?: number;
 };
+
+// Hard caps so a malicious user can't paste 10M chars and bloat the JSONB row.
+// Tune per type for realistic content; templates can override via TemplateField.maxLength.
+const DEFAULT_MAX_LENGTH: Record<string, number> = {
+  string: 200,
+  textarea: 1000,
+  image: 500,
+  color: 7,
+};
+
+function maxLengthFor(field: TemplateField): number | undefined {
+  if (field.maxLength) return field.maxLength;
+  if (field.type === "number") return undefined;
+  return DEFAULT_MAX_LENGTH[field.type] ?? 200;
+}
+
+/** Validates required fields; returns a key→message map of failures (empty map = valid). */
+export function validateRequired(
+  fields: TemplateField[],
+  values: Record<string, string | number>,
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  for (const f of fields) {
+    if (!f.required) continue;
+    const v = values[f.key];
+    const isEmpty =
+      v === undefined ||
+      v === null ||
+      (typeof v === "string" && v.trim().length === 0) ||
+      (typeof v === "number" && Number.isNaN(v));
+    if (isEmpty) {
+      errors[f.key] = `Заповніть «${f.label}»`;
+    }
+  }
+  return errors;
+}
 
 type Props = {
   fields: TemplateField[];
   values: Record<string, string | number>;
   onChange: (key: string, value: string | number) => void;
+  /** Map of fieldKey → error message — highlights field red and shows the text below. */
+  errors?: Record<string, string>;
 };
 
-export default function ContentForm({ fields, values, onChange }: Props) {
+export default function ContentForm({ fields, values, onChange, errors }: Props) {
   if (fields.length === 0) {
     return (
       <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-500">
@@ -37,6 +77,7 @@ export default function ContentForm({ fields, values, onChange }: Props) {
               key={f.key}
               field={f}
               value={values[f.key] ?? ""}
+              error={errors?.[f.key]}
               onChange={(v) => onChange(f.key, v)}
             />
           ))}
@@ -49,10 +90,12 @@ export default function ContentForm({ fields, values, onChange }: Props) {
 function FieldRow({
   field,
   value,
+  error,
   onChange,
 }: {
   field: TemplateField;
   value: string | number;
+  error?: string;
   onChange: (v: string | number) => void;
 }) {
   return (
@@ -61,8 +104,29 @@ function FieldRow({
         {field.label}
         {field.required && <span className="ml-1 text-red-500">*</span>}
       </label>
-      {renderControl(field, value, onChange)}
+      {renderControl(field, value, onChange, Boolean(error))}
+      {field.key === "description" && (
+        <DescriptionCounter value={String(value || "")} />
+      )}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
+  );
+}
+
+function DescriptionCounter({ value }: { value: string }) {
+  const len = value.length;
+  const tier =
+    len === 0
+      ? { color: "text-gray-400", suffix: " (рекомендовано 120-160)" }
+      : len < 120
+        ? { color: "text-gray-500", suffix: ` — ще ${120 - len} для оптимуму` }
+        : len <= 160
+          ? { color: "text-green-600", suffix: " — оптимально" }
+          : { color: "text-amber-600", suffix: ` — Google обріже після 160` };
+  return (
+    <p className={`mt-1 text-xs ${tier.color}`}>
+      {len} / 160{tier.suffix}
+    </p>
   );
 }
 
@@ -70,7 +134,13 @@ function renderControl(
   field: TemplateField,
   value: string | number,
   onChange: (v: string | number) => void,
+  invalid: boolean,
 ) {
+  // Append red border when the field has a validation error.
+  const inputCls = invalid
+    ? `${INPUT_CLASS} !border-red-500 focus:!border-red-500`
+    : INPUT_CLASS;
+  const max = maxLengthFor(field);
   switch (field.type) {
     case "color":
       return (
@@ -97,7 +167,12 @@ function renderControl(
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder ?? "Введіть текст"}
           rows={3}
-          className="w-full resize-y rounded-[10px] border border-[#C8C8C8] bg-white px-4 py-3 text-sm leading-snug placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+          maxLength={max}
+          className={`w-full resize-y rounded-[10px] border bg-white px-4 py-3 text-sm leading-snug placeholder:text-gray-400 focus:outline-none ${
+            invalid
+              ? "border-red-500 focus:border-red-500"
+              : "border-[#C8C8C8] focus:border-gray-900"
+          }`}
         />
       );
     case "number":
@@ -110,7 +185,7 @@ function renderControl(
             onChange(e.target.value === "" ? "" : Number(e.target.value))
           }
           placeholder={field.placeholder}
-          className={INPUT_CLASS}
+          className={inputCls}
         />
       );
     case "string":
@@ -122,7 +197,8 @@ function renderControl(
           value={String(value || "")}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder ?? "Введіть текст"}
-          className={INPUT_CLASS}
+          maxLength={max}
+          className={inputCls}
         />
       );
   }

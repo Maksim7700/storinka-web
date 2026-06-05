@@ -7,6 +7,7 @@ import { ChevronLeftIcon, SendIcon } from "../../../../../_components/icons";
 import { getTemplateComponent } from "../../../../../_components/templates/registry";
 import ContentForm, {
   type TemplateField,
+  validateRequired,
 } from "../../../_components/ContentForm";
 
 type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
@@ -37,6 +38,7 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -96,12 +98,29 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
 
   function updateField(key: string, value: string | number) {
     setContent((prev) => ({ ...prev, [key]: value }));
+    // Clear this field's error as soon as the user starts editing.
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
   }
 
   async function handleProceed() {
     if (!site) return;
+
+    const validation = validateRequired(fields, content);
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation);
+      setSaveError("Заповніть обовʼязкові поля перед тим як перейти далі.");
+      return;
+    }
+
     setSaving(true);
     setSaveError(null);
+    setErrors({});
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/sites/${site.id}/content`, {
@@ -201,7 +220,12 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
           className="flex w-[380px] shrink-0 flex-col overflow-y-auto border-l border-[#E6E6E6] bg-white p-6"
           aria-label="Форма редагування"
         >
-          <ContentForm fields={fields} values={content} onChange={updateField} />
+          <ContentForm
+            fields={fields}
+            values={content}
+            onChange={updateField}
+            errors={errors}
+          />
         </aside>
       </div>
     </div>

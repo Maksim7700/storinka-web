@@ -318,10 +318,15 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
               items count, otherwise the badge would scream forever about
               recommendations. */}
           {(() => {
-            const checklist = buildChecklist(template, content, {
-              gscVerification: site.gscVerification,
-              gaMeasurementId: site.gaMeasurementId,
-            });
+            const checklist = buildChecklist(
+              template,
+              content,
+              {
+                gscVerification: site.gscVerification,
+                gaMeasurementId: site.gaMeasurementId,
+              },
+              { customDomain: site.customDomain },
+            );
             const missingCount = countMissingRequired(checklist);
             return (
               <div
@@ -383,6 +388,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
                   gscVerification: site.gscVerification,
                   gaMeasurementId: site.gaMeasurementId,
                 }}
+                site={{ customDomain: site.customDomain }}
               />
             )}
           </div>

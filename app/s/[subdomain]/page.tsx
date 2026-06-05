@@ -130,13 +130,11 @@ export default async function PublicSitePage({
 
   return (
     <>
-      {jsonLd && (
-        // serialiseJsonLd escapes `</`; input is controlled, so dangerouslySetInnerHTML is safe here.
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serialiseJsonLd(jsonLd) }}
-        />
-      )}
+      {/* serialiseJsonLd escapes `</`; input is controlled, so dangerouslySetInnerHTML is safe. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serialiseJsonLd(jsonLd) }}
+      />
 
       {gaId && (
         // GA4 via gtag, deferred to afterInteractive so analytics never blocks.
