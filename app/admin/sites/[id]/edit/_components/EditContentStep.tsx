@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeftIcon, SendIcon } from "../../../../../_components/icons";
-import { getTemplateComponent } from "../../../../../_components/templates/registry";
+import {
+  getTemplateComponent,
+  getTemplateFields,
+} from "../../../../../_components/templates/registry";
+import { usePreviewScroll } from "../../../../../_lib/usePreviewScroll";
 import ContentForm, {
-  type TemplateField,
   validateRequired,
 } from "../../../_components/ContentForm";
 
@@ -20,25 +23,27 @@ type Site = {
   templateKey: string;
   templateName: string;
   templateThumbnailUrl: string | null;
-  contentJson: Record<string, string | number>;
+  contentJson: Record<string, unknown>;
 };
 
 type Template = {
   id: number;
   key: string;
   name: string;
-  schemaJson: { fields?: TemplateField[] } | null;
+  // `schemaJson` ignored — frontend reads fields from the code-side registry.
 };
 
 export default function EditContentStep({ siteId }: { siteId: number }) {
   const router = useRouter();
   const [site, setSite] = useState<Site | null>(null);
   const [template, setTemplate] = useState<Template | null>(null);
-  const [content, setContent] = useState<Record<string, string | number>>({});
+  const [content, setContent] = useState<Record<string, unknown>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { previewRef, focusPreview } = usePreviewScroll();
 
   useEffect(() => {
     let cancelled = false;
@@ -94,9 +99,9 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
     () => (template ? getTemplateComponent(template.key) : null),
     [template?.key],
   );
-  const fields = template?.schemaJson?.fields ?? [];
+  const fields = template ? getTemplateFields(template.key) : [];
 
-  function updateField(key: string, value: string | number) {
+  function updateField(key: string, value: unknown) {
     setContent((prev) => ({ ...prev, [key]: value }));
     // Clear this field's error as soon as the user starts editing.
     if (errors[key]) {
@@ -204,6 +209,7 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
 
       <div className="flex flex-1 overflow-hidden">
         <section
+          ref={previewRef}
           className="flex-[2] overflow-y-auto bg-white"
           aria-label="Живе прев'ю"
         >
@@ -225,6 +231,7 @@ export default function EditContentStep({ siteId }: { siteId: number }) {
             values={content}
             onChange={updateField}
             errors={errors}
+            onFieldFocus={focusPreview}
           />
         </aside>
       </div>

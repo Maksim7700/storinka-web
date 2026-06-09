@@ -17,7 +17,7 @@ export default function DomainPicker({
 
   const [draftReady, setDraftReady] = useState<boolean | null>(null);
   const [templateId, setTemplateId] = useState<number | null>(null);
-  const [content, setContent] = useState<Record<string, string | number>>({});
+  const [content, setContent] = useState<Record<string, unknown>>({});
 
   const [subdomain, setSubdomain] = useState("");
   const [status, setStatus] = useState<SubdomainStatus>("idle");

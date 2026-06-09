@@ -4,22 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeftIcon, SendIcon } from "../../../../_components/icons";
-import { getTemplateComponent } from "../../../../_components/templates/registry";
+import { buildDefaults } from "../../../../_components/templates/_internal";
+import {
+  getTemplateComponent,
+  getTemplateFields,
+} from "../../../../_components/templates/registry";
 import { loadDraft, saveDraft } from "../../../../_lib/draftState";
-import ContentForm, {
-  type TemplateField,
-} from "../../_components/ContentForm";
+import { usePreviewScroll } from "../../../../_lib/usePreviewScroll";
+import ContentForm from "../../_components/ContentForm";
 import type { TemplateForWizard } from "../page";
-
-function initialContentFromSchema(
-  fields: TemplateField[],
-): Record<string, string | number> {
-  const initial: Record<string, string | number> = {};
-  for (const f of fields) {
-    if (f.default !== undefined) initial[f.key] = f.default;
-  }
-  return initial;
-}
 
 export default function SiteCustomizer({
   template,
@@ -27,10 +20,10 @@ export default function SiteCustomizer({
   template: TemplateForWizard;
 }) {
   const router = useRouter();
-  const fields = template.schemaJson?.fields ?? [];
+  const fields = getTemplateFields(template.key);
 
-  const [content, setContent] = useState<Record<string, string | number>>(() =>
-    initialContentFromSchema(fields),
+  const [content, setContent] = useState<Record<string, unknown>>(() =>
+    buildDefaults(fields),
   );
 
   // On mount: if there is an in-progress draft for THIS template (e.g. user
@@ -49,9 +42,11 @@ export default function SiteCustomizer({
     [template.key],
   );
 
-  function updateField(key: string, value: string | number) {
+  function updateField(key: string, value: unknown) {
     setContent((prev) => ({ ...prev, [key]: value }));
   }
+
+  const { previewRef, focusPreview } = usePreviewScroll();
 
   function handleProceed() {
     saveDraft({
@@ -94,6 +89,7 @@ export default function SiteCustomizer({
 
       <div className="flex flex-1 overflow-hidden">
         <section
+          ref={previewRef}
           className="flex-[2] overflow-y-auto bg-white"
           aria-label="Живе прев'ю"
         >
@@ -114,6 +110,7 @@ export default function SiteCustomizer({
             fields={fields}
             values={content}
             onChange={updateField}
+            onFieldFocus={focusPreview}
           />
         </aside>
       </div>

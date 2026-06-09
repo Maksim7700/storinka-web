@@ -10,7 +10,10 @@ import {
   PhoneIcon,
   SignalIcon,
 } from "../../../../../_components/icons";
-import { getTemplateComponent } from "../../../../../_components/templates/registry";
+import {
+  getTemplateComponent,
+  getTemplateMeta,
+} from "../../../../../_components/templates/registry";
 import { ROOT_DOMAIN } from "../../../../../_lib/constants";
 
 type SiteStatus = "DRAFT" | "ACTIVE" | "SUSPENDED" | "INACTIVE";
@@ -23,18 +26,14 @@ type Site = {
   templateKey: string;
   templateName: string;
   templateThumbnailUrl: string | null;
-  contentJson: Record<string, string | number>;
+  contentJson: Record<string, unknown>;
 };
-
-type Feature = { label: string; icon?: string };
 
 type Template = {
   licensePrice: number;
   monthlyPrice: number;
-  schemaJson: {
-    features?: Feature[];
-    tags?: string[];
-  } | null;
+  // schemaJson is still on the wire but unused — features/tags come from the
+  // code-side registry instead.
 };
 
 const numberFormat = new Intl.NumberFormat("uk-UA");
@@ -108,7 +107,7 @@ export default function PreviewSummary({ siteId }: { siteId: number }) {
   }
 
   const Component = getTemplateComponent(site.templateKey);
-  const features = template.schemaJson?.features ?? [];
+  const features = getTemplateMeta(site.templateKey)?.features ?? [];
   const brandName =
     (typeof site.contentJson?.businessName === "string" &&
       site.contentJson.businessName) ||
@@ -194,7 +193,7 @@ function PreviewMockup({
   onViewportChange,
 }: {
   Component: ReturnType<typeof getTemplateComponent>;
-  content: Record<string, string | number>;
+  content: Record<string, unknown>;
   thumbnail: string | null;
   viewport: Viewport;
   onViewportChange: (v: Viewport) => void;
@@ -297,7 +296,7 @@ function DesktopFrame({
   thumbnail,
 }: {
   Component: ReturnType<typeof getTemplateComponent>;
-  content: Record<string, string | number>;
+  content: Record<string, unknown>;
   thumbnail: string | null;
 }) {
   return (
@@ -329,7 +328,7 @@ function MobileFrame({
   thumbnail,
 }: {
   Component: ReturnType<typeof getTemplateComponent>;
-  content: Record<string, string | number>;
+  content: Record<string, unknown>;
   thumbnail: string | null;
 }) {
   return (

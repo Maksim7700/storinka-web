@@ -8,7 +8,7 @@ const STORAGE_KEY = "storinka:pending-site";
 export type PendingSiteDraft = {
   templateId: number;
   templateKey: string;
-  content: Record<string, string | number>;
+  content: Record<string, unknown>;
 };
 
 export function saveDraft(draft: PendingSiteDraft) {

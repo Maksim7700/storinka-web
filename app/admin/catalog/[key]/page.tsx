@@ -11,14 +11,7 @@ import {
   BTN_PRIMARY_CLASS,
   BTN_SECONDARY_CLASS,
 } from "../../../_components/styles";
-
-type TemplateFeature = { label: string; icon?: string };
-
-type TemplateSchema = {
-  fields?: unknown[];
-  tags?: string[];
-  features?: TemplateFeature[];
-};
+import { getTemplateMeta } from "../../../_components/templates/registry";
 
 type TemplateDetails = {
   id: number;
@@ -27,7 +20,8 @@ type TemplateDetails = {
   description: string | null;
   thumbnailUrl: string | null;
   category: string | null;
-  schemaJson: TemplateSchema | null;
+  // schemaJson still returned by backend but we read tags/features from the
+  // code-side registry — never trust this field anymore.
   licensePrice: number;
   monthlyPrice: number;
 };
@@ -67,8 +61,9 @@ export default async function TemplatePreviewPage({
   if (!template) notFound();
 
   const meta = template.category ? CATEGORY_META[template.category] : null;
-  const tags = template.schemaJson?.tags ?? [];
-  const features = template.schemaJson?.features ?? [];
+  const codeMeta = getTemplateMeta(template.key);
+  const tags = codeMeta?.tags ?? [];
+  const features = codeMeta?.features ?? [];
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-6">

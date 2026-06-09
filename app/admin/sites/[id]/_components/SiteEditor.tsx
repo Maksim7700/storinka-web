@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { revalidateSite } from "../../../../_actions/revalidateSite";
 import { ChevronLeftIcon } from "../../../../_components/icons";
-import { getTemplateComponent } from "../../../../_components/templates/registry";
+import {
+  getTemplateComponent,
+  getTemplateFields,
+} from "../../../../_components/templates/registry";
 import { ROOT_DOMAIN } from "../../../../_lib/constants";
-import ContentForm, {
-  type TemplateField,
-} from "../../_components/ContentForm";
+import { usePreviewScroll } from "../../../../_lib/usePreviewScroll";
+import ContentForm from "../../_components/ContentForm";
 import SeoSettings from "./SeoSettings";
 import SiteHealth, {
   buildChecklist,
@@ -34,7 +36,7 @@ type Site = {
   templateKey: string;
   templateName: string;
   templateThumbnailUrl: string | null;
-  contentJson: Record<string, string | number>;
+  contentJson: Record<string, unknown>;
   gscVerification: string | null;
   gaMeasurementId: string | null;
   createdAt: string;
@@ -45,7 +47,8 @@ type Template = {
   id: number;
   key: string;
   name: string;
-  schemaJson: { fields?: TemplateField[] } | null;
+  // `schemaJson` is still returned by the backend but ignored on the frontend
+  // — see the comment near `getTemplateFields(...)` below.
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -58,7 +61,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
   const [template, setTemplate] = useState<Template | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [content, setContent] = useState<Record<string, string | number>>({});
+  const [content, setContent] = useState<Record<string, unknown>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -67,6 +70,11 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
 
   // Tabbed right panel; SEO has its own save flow so the top-toolbar save hides on that tab.
   const [tab, setTab] = useState<EditorTab>("content");
+
+  // Live-preview scroller — wired to ContentForm.onFieldFocus so editing a
+  // field jumps the preview to the matching `[data-section]` block. The hook
+  // also pulses an orange ring around the section so the scroll is noticeable.
+  const { previewRef, focusPreview } = usePreviewScroll();
 
   // Load site → then load its template (need schema_json for the form).
   useEffect(() => {
@@ -132,9 +140,11 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
     [template?.key],
   );
 
-  const fields = template?.schemaJson?.fields ?? [];
+  // Source of truth for fields lives in the local registry (templates/<key>/
+  // schema.ts), NOT in `template.schemaJson` — that backend column is legacy.
+  const fields = template ? getTemplateFields(template.key) : [];
 
-  function updateField(key: string, value: string | number) {
+  function updateField(key: string, value: unknown) {
     setContent((prev) => ({ ...prev, [key]: value }));
     if (saveState === "saved") setSaveState("idle");
   }
@@ -297,6 +307,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
       {/* Split layout */}
       <div className="flex flex-1 overflow-hidden">
         <section
+          ref={previewRef}
           className="flex-[2] overflow-y-auto bg-white"
           aria-label="Живе прев'ю"
         >
@@ -319,7 +330,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
               recommendations. */}
           {(() => {
             const checklist = buildChecklist(
-              template,
+              template?.key ?? null,
               content,
               {
                 gscVerification: site.gscVerification,
@@ -365,6 +376,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
                 fields={fields}
                 values={content}
                 onChange={updateField}
+                onFieldFocus={focusPreview}
               />
             )}
             {tab === "seo" && (
@@ -382,7 +394,7 @@ export default function SiteEditor({ siteId }: { siteId: number }) {
             )}
             {tab === "health" && (
               <SiteHealth
-                template={template}
+                templateKey={template?.key ?? null}
                 content={content}
                 seo={{
                   gscVerification: site.gscVerification,

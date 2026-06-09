@@ -62,3 +62,40 @@ body {
     animation: none;
   }
 }
+
+/* ---------- Admin live-preview "you are editing this" highlight ---------- */
+/* Added by usePreviewScroll when a form field gets focus. The keyframe pulses
+   an orange ring around the matching section so the user can see *what* the
+   scroll just jumped to. Auto-removes after the animation finishes; we never
+   leave the class behind so the section returns to its real visual state. */
+
+@keyframes cs-preview-highlight-pulse {
+  0% {
+    outline: 0 solid transparent;
+    outline-offset: 0;
+    box-shadow: 0 0 0 0 rgba(255, 74, 23, 0);
+  }
+  20% {
+    outline: 3px solid rgba(255, 74, 23, 0.9);
+    outline-offset: 6px;
+    box-shadow: 0 0 0 8px rgba(255, 74, 23, 0.18);
+  }
+  100% {
+    outline: 0 solid transparent;
+    outline-offset: 0;
+    box-shadow: 0 0 0 0 rgba(255, 74, 23, 0);
+  }
+}
+
+.cs-preview-highlight {
+  animation: cs-preview-highlight-pulse 1.8s ease-out;
+  /* `auto` so the outline never gets clipped by ancestor overflow-hidden;
+     a bare `outline` already paints over container edges in modern browsers. */
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-preview-highlight {
+    animation: none;
+  }
+}

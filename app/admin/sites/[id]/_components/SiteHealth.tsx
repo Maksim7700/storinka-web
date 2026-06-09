@@ -1,6 +1,6 @@
 "use client";
 
-import type { TemplateField } from "../../_components/ContentForm";
+import { getTemplateFields } from "../../../../_components/templates/registry";
 
 // Client-computed SEO completeness checklist — updates live as the owner edits fields.
 
@@ -15,8 +15,11 @@ type CheckItem = {
 };
 
 type Props = {
-  template: { schemaJson: { fields?: TemplateField[] } | null } | null;
-  content: Record<string, string | number>;
+  /** Just the template key — the field list is resolved locally from the
+   * code-side registry (`templates/<key>/schema.ts`), never from
+   * `template.schemaJson` over the wire. */
+  templateKey: string | null;
+  content: Record<string, unknown>;
   seo: {
     gscVerification: string | null;
     gaMeasurementId: string | null;
@@ -28,7 +31,7 @@ type Props = {
 
 /** Exported so the parent tab strip can show the count without rendering the full component. */
 export function buildChecklist(
-  template: Props["template"],
+  templateKey: Props["templateKey"],
   content: Props["content"],
   seo: Props["seo"],
   site: Props["site"],
@@ -39,7 +42,7 @@ export function buildChecklist(
   const hasContent = (k: string, min = 1) => value(k).length >= min;
 
   // Template owns its own required-field definition — loop works for any future template.
-  const fields = template?.schemaJson?.fields ?? [];
+  const fields = templateKey ? getTemplateFields(templateKey) : [];
   const hasField = (key: string) => fields.some((f) => f.key === key);
   for (const f of fields) {
     // Skip colour/non-text fields — can't meaningfully check completeness.
@@ -136,8 +139,13 @@ export function countMissingRequired(items: CheckItem[]): number {
   return items.filter((i) => !i.passed && i.level === "required").length;
 }
 
-export default function SiteHealth({ template, content, seo, site }: Props) {
-  const items = buildChecklist(template, content, seo, site);
+export default function SiteHealth({
+  templateKey,
+  content,
+  seo,
+  site,
+}: Props) {
+  const items = buildChecklist(templateKey, content, seo, site);
 
   const passed = items.filter((i) => i.passed).length;
   const total = items.length;

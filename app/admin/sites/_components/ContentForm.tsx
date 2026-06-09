@@ -3,15 +3,37 @@
 import { useRef, useState } from "react";
 import { INPUT_CLASS, LABEL_CLASS } from "../../../_components/styles";
 
+export type TemplateFieldType =
+  | "string"
+  | "textarea"
+  | "number"
+  | "color"
+  | "image"
+  | "url"
+  | "repeater";
+
 export type TemplateField = {
   key: string;
   label: string;
-  type: string;
+  type: TemplateFieldType;
   required?: boolean;
   placeholder?: string;
-  default?: string | number;
+  default?: unknown;
   /** Override the per-type default char limit (see DEFAULT_MAX_LENGTH below). */
   maxLength?: number;
+  /** Key used to scroll the live preview when this field is focused.
+   * Template renders a `[data-section="<previewAnchor>"]` somewhere; the editor
+   * picks it up and scrolls. Falls back to the field's own `key`. */
+  previewAnchor?: string;
+
+  // ── repeater-only ───────────────────────────────────────────────────────
+  /** Singular noun for the “+ Add” button label, e.g. "Проєкт". */
+  itemLabel?: string;
+  /** Field schema for each item in the repeater. */
+  fields?: TemplateField[];
+  /** Min / max items the user can have. */
+  min?: number;
+  max?: number;
 };
 
 // Hard caps so a malicious user can't paste 10M chars and bloat the JSONB row.
@@ -21,29 +43,37 @@ const DEFAULT_MAX_LENGTH: Record<string, number> = {
   textarea: 1000,
   image: 500,
   color: 7,
+  url: 500,
 };
 
 function maxLengthFor(field: TemplateField): number | undefined {
   if (field.maxLength) return field.maxLength;
   if (field.type === "number") return undefined;
+  if (field.type === "repeater") return undefined;
   return DEFAULT_MAX_LENGTH[field.type] ?? 200;
 }
 
-/** Validates required fields; returns a key→message map of failures (empty map = valid). */
+function isEmptyScalar(v: unknown): boolean {
+  if (v === undefined || v === null) return true;
+  if (typeof v === "string") return v.trim().length === 0;
+  if (typeof v === "number") return Number.isNaN(v);
+  if (Array.isArray(v)) return v.length === 0;
+  return false;
+}
+
+/** Validates required fields; returns a key→message map of failures (empty map = valid).
+ * Repeater fields are considered missing when the array is empty. We don't dive into
+ * inner item validation here — that would surface "ghost" errors for items the user
+ * hasn't started filling. Keep it shallow for now.
+ */
 export function validateRequired(
   fields: TemplateField[],
-  values: Record<string, string | number>,
+  values: Record<string, unknown>,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const f of fields) {
     if (!f.required) continue;
-    const v = values[f.key];
-    const isEmpty =
-      v === undefined ||
-      v === null ||
-      (typeof v === "string" && v.trim().length === 0) ||
-      (typeof v === "number" && Number.isNaN(v));
-    if (isEmpty) {
+    if (isEmptyScalar(values[f.key])) {
       errors[f.key] = `Заповніть «${f.label}»`;
     }
   }
@@ -52,13 +82,22 @@ export function validateRequired(
 
 type Props = {
   fields: TemplateField[];
-  values: Record<string, string | number>;
-  onChange: (key: string, value: string | number) => void;
+  values: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
   /** Map of fieldKey → error message — highlights field red and shows the text below. */
   errors?: Record<string, string>;
+  /** Fires with the preview anchor (or field.key) when ANY input inside this
+   * form gets focus. Editor wires this to scroll the live preview. */
+  onFieldFocus?: (anchorKey: string) => void;
 };
 
-export default function ContentForm({ fields, values, onChange, errors }: Props) {
+export default function ContentForm({
+  fields,
+  values,
+  onChange,
+  errors,
+  onFieldFocus,
+}: Props) {
   if (fields.length === 0) {
     return (
       <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-500">
@@ -67,22 +106,60 @@ export default function ContentForm({ fields, values, onChange, errors }: Props)
     );
   }
 
+  // Repeaters are visually heavy — pull them into their own sections under the
+  // flat "Загальне" block so the form reads top→bottom without long jumps.
+  const flat = fields.filter((f) => f.type !== "repeater");
+  const repeaters = fields.filter((f) => f.type === "repeater");
+
+  // Delegated focus capture: any input that bubbles a focus event up through
+  // here is looked up via its nearest [data-field-key] ancestor. Cheaper than
+  // wiring onFocus on every leaf <input>.
+  function handleFocusCapture(e: React.FocusEvent<HTMLDivElement>) {
+    if (!onFieldFocus) return;
+    const el = (e.target as HTMLElement).closest<HTMLElement>(
+      "[data-field-key]",
+    );
+    if (!el) return;
+    const k = el.dataset.fieldKey;
+    if (k) onFieldFocus(k);
+  }
+
   return (
-    <div className="space-y-6">
-      <section>
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Загальне</h3>
-        <div className="space-y-4">
-          {fields.map((f) => (
-            <FieldRow
-              key={f.key}
-              field={f}
-              value={values[f.key] ?? ""}
-              error={errors?.[f.key]}
-              onChange={(v) => onChange(f.key, v)}
-            />
-          ))}
-        </div>
-      </section>
+    <div className="space-y-8" onFocusCapture={handleFocusCapture}>
+      {flat.length > 0 && (
+        <section>
+          <h3 className="mb-4 text-sm font-semibold text-gray-900">Загальне</h3>
+          <div className="space-y-4">
+            {flat.map((f) => (
+              <FieldRow
+                key={f.key}
+                field={f}
+                value={values[f.key] ?? ""}
+                error={errors?.[f.key]}
+                onChange={(v) => onChange(f.key, v)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {repeaters.map((f) => (
+        <section
+          key={f.key}
+          data-field-key={f.previewAnchor ?? f.key}
+        >
+          <h3 className="mb-4 text-sm font-semibold text-gray-900">{f.label}</h3>
+          <RepeaterControl
+            field={f}
+            value={values[f.key]}
+            onChange={(v) => onChange(f.key, v)}
+            error={errors?.[f.key]}
+          />
+          {errors?.[f.key] && (
+            <p className="mt-2 text-xs text-red-600">{errors[f.key]}</p>
+          )}
+        </section>
+      ))}
     </div>
   );
 }
@@ -94,12 +171,12 @@ function FieldRow({
   onChange,
 }: {
   field: TemplateField;
-  value: string | number;
+  value: unknown;
   error?: string;
-  onChange: (v: string | number) => void;
+  onChange: (v: unknown) => void;
 }) {
   return (
-    <div>
+    <div data-field-key={field.previewAnchor ?? field.key}>
       <label htmlFor={field.key} className={LABEL_CLASS}>
         {field.label}
         {field.required && <span className="ml-1 text-red-500">*</span>}
@@ -132,8 +209,8 @@ function DescriptionCounter({ value }: { value: string }) {
 
 function renderControl(
   field: TemplateField,
-  value: string | number,
-  onChange: (v: string | number) => void,
+  value: unknown,
+  onChange: (v: unknown) => void,
   invalid: boolean,
 ) {
   // Append red border when the field has a validation error.
@@ -180,7 +257,7 @@ function renderControl(
         <input
           id={field.key}
           type="number"
-          value={value === "" ? "" : Number(value)}
+          value={value === "" || value === undefined || value === null ? "" : Number(value)}
           onChange={(e) =>
             onChange(e.target.value === "" ? "" : Number(e.target.value))
           }
@@ -188,6 +265,21 @@ function renderControl(
           className={inputCls}
         />
       );
+    case "url":
+      return (
+        <input
+          id={field.key}
+          type="url"
+          value={String(value || "")}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder ?? "https://..."}
+          maxLength={max}
+          className={inputCls}
+        />
+      );
+    case "repeater":
+      // Repeaters are rendered standalone by ContentForm — never via FieldRow.
+      return null;
     case "string":
     default:
       return (
@@ -211,7 +303,7 @@ function ColorControl({
 }: {
   id: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (v: unknown) => void;
 }) {
   // Compound: color picker swatch + editable hex text, both sync to one value.
   return (
@@ -242,7 +334,7 @@ function ImageControl({
 }: {
   id: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (v: unknown) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -333,6 +425,139 @@ function ImageControl({
       )}
 
       {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+// ── repeater ────────────────────────────────────────────────────────────────
+
+type RepeaterItem = Record<string, unknown>;
+
+function asItems(value: unknown): RepeaterItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (v): v is RepeaterItem => typeof v === "object" && v !== null && !Array.isArray(v),
+  );
+}
+
+function RepeaterControl({
+  field,
+  value,
+  onChange,
+}: {
+  field: TemplateField;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  error?: string;
+}) {
+  const items = asItems(value);
+  const subFields = field.fields ?? [];
+  const itemLabel = field.itemLabel ?? "Елемент";
+  const max = field.max;
+  const min = field.min ?? 0;
+
+  function updateItem(idx: number, key: string, v: unknown) {
+    const next = items.map((it, i) => (i === idx ? { ...it, [key]: v } : it));
+    onChange(next);
+  }
+
+  function addItem() {
+    if (max !== undefined && items.length >= max) return;
+    // Seed each sub-field with a sensible empty value so React inputs stay controlled.
+    const seed: RepeaterItem = {};
+    for (const sf of subFields) {
+      seed[sf.key] = sf.type === "number" ? 0 : "";
+    }
+    onChange([...items, seed]);
+  }
+
+  function removeItem(idx: number) {
+    if (items.length <= min) return;
+    onChange(items.filter((_, i) => i !== idx));
+  }
+
+  function moveItem(idx: number, delta: number) {
+    const target = idx + delta;
+    if (target < 0 || target >= items.length) return;
+    const next = items.slice();
+    const [moved] = next.splice(idx, 1);
+    next.splice(target, 0, moved);
+    onChange(next);
+  }
+
+  return (
+    <div className="space-y-3">
+      {items.length === 0 && (
+        <p className="rounded-md border border-dashed border-[#C8C8C8] bg-gray-50 px-3 py-4 text-center text-sm text-gray-500">
+          Поки немає елементів. Натисніть «Додати» нижче.
+        </p>
+      )}
+
+      {items.map((item, idx) => (
+        <div
+          key={idx}
+          className="rounded-[12px] border border-[#E6E6E6] bg-white p-4"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              {itemLabel} {idx + 1}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => moveItem(idx, -1)}
+                disabled={idx === 0}
+                aria-label="Вгору"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => moveItem(idx, 1)}
+                disabled={idx === items.length - 1}
+                aria-label="Вниз"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => removeItem(idx)}
+                disabled={items.length <= min}
+                className="ml-1 h-7 cursor-pointer rounded px-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Видалити
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {subFields.map((sf) => (
+              <FieldRow
+                key={sf.key}
+                field={sf}
+                value={item[sf.key] ?? ""}
+                onChange={(v) => updateItem(idx, sf.key, v)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addItem}
+        disabled={max !== undefined && items.length >= max}
+        className="w-full cursor-pointer rounded-[10px] border border-dashed border-gray-400 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:border-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        + Додати {itemLabel.toLowerCase()}
+        {max !== undefined && (
+          <span className="ml-2 text-xs font-normal text-gray-400">
+            ({items.length} / {max})
+          </span>
+        )}
+      </button>
     </div>
   );
 }

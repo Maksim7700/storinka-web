@@ -33,6 +33,7 @@ const CATEGORY_META: Record<string, { label: string; bg: string }> = {
   food: { label: "РЕСТОРАН", bg: "#F97316" },
   auto: { label: "АВТО", bg: "#3B82F6" },
   business: { label: "БІЗНЕС", bg: "#10B981" },
+  creative: { label: "ПОРТФОЛІО", bg: "#191919" },
 };
 
 // Uniform license fee; per-template monthly fee comes from TemplateSummary.
